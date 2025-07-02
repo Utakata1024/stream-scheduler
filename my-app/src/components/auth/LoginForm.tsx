@@ -16,9 +16,13 @@ export default function LoginForm() {
         // onSubmit={}
         className="flex flex-col gap-4 p-8 border rounded-lg shadow-xl max-w-sm w-full bg-white"
       >
-        <h2 className="text-3xl font-bold text-center text-gray-800 mb-6">ログイン</h2>
+        <h2 className="text-3xl font-bold text-center text-gray-800 mb-6">
+          ログイン
+        </h2>
         <div>
-          <h2 className="blocktext-sm font-medium text-gray-700 mb-1">ユーザーID</h2>
+          <h2 className="blocktext-sm font-medium text-gray-700 mb-1">
+            ユーザーID
+          </h2>
           <input
             type="text"
             value={id}
@@ -28,7 +32,9 @@ export default function LoginForm() {
           />
         </div>
         <div>
-          <h2 className="block text-sm font-medium text-gray-700 mb-1">パスワード</h2>
+          <h2 className="block text-sm font-medium text-gray-700 mb-1">
+            パスワード
+          </h2>
           <input
             type="password"
             value={password}
@@ -48,7 +54,10 @@ export default function LoginForm() {
         <div>
           <p className="text-center text-sm text-gray-600 mt-4">
             アカウントをお持ちでないですか？
-            <a href="/signup" className="font-medium text-indigo-600 hover:text-indigo-800">
+            <a
+              href="/signup"
+              className="font-medium text-indigo-600 hover:text-indigo-800"
+            >
               新規登録
             </a>
           </p>
