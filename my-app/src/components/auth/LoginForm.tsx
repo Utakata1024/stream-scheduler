@@ -45,6 +45,14 @@ export default function LoginForm() {
             ログイン
           </button>
         </div>
+        <div>
+          <p className="text-center text-sm text-gray-600 mt-4">
+            アカウントをお持ちでないですか？
+            <a href="/signup" className="font-medium text-indigo-600 hover:text-indigo-800">
+              新規登録
+            </a>
+          </p>
+        </div>
       </form>
     </div>
   );
