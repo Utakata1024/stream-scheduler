@@ -19,6 +19,11 @@ export default function Header() {
           <nav>
             <ul className="flex space-x-6">
               <li>
+                <Link href="/calendar" className="text-lg hover:text-indigo-200 transition-colors duration-200">
+                    カレンダー
+                </Link>
+              </li>
+              <li>
                 <Link href="/channnels" className="text-lg hover:text-indigo-200 transition-colors duration-200">
                     チャンネル管理
                 </Link>
