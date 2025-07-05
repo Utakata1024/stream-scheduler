@@ -15,7 +15,7 @@ export default function SchedulePage() {
   return (
     <div className="min-h-screen bg-gray-100 p-8">
       <h1 className="text-4xl font-bold text-center mb-8">
-        直近のスケジュール
+        スケジュール
       </h1>
       {/* タブ切り替えボタン */}
       <div className="bg-white p-4 rounded-lg shadow-md mb-6 flex justify-center gap-4">
