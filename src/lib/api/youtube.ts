@@ -1,5 +1,3 @@
-import { INSPECT_MAX_BYTES } from "buffer";
-
 // YouTube Data APIのベースURL
 const YOUTUBE_API_BASE_URL = "https://www.googleapis.com/youtube/v3";
 
@@ -33,9 +31,10 @@ export async function fetchLiveAndUpcomingStreams(
 
   try {
     // ライブ配信の検索
-    const response = await fetch(
-      `${YOUTUBE_API_BASE_URL}/search?part=snippet&channelId=${channelId}&eventType=live&type=video&key=${apiKey}`
-    );
+    const requestUrl = `${YOUTUBE_API_BASE_URL}/search?part=snippet&channelId=${channelId}&type=video&order=date&maxResults=20&key=${apiKey}`;
+    console.log("Fetching YouTube API from URL:", requestUrl);
+
+    const response = await fetch(requestUrl);
     const liveData = await response.json();
 
     // ここでレスポンス全体をコンソールに出力して確認
@@ -58,8 +57,9 @@ export async function fetchLiveAndUpcomingStreams(
         streams.push({
           videoId: item.id.videoId,
           thumbnailUrl:
-            item.snippet.thumbnails.default.url ||
-            item.snippet.thumbnails.default?.url ||
+            item.snippet.thumbnails.high?.url || // high品質を優先
+            item.snippet.thumbnails.medium?.url || // medium品質を次に
+            item.snippet.thumbnails.default?.url || // default品質を最後に
             "",
           title: item.snippet.title,
           channelName: item.snippet.channelTitle,

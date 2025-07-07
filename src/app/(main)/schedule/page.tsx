@@ -23,7 +23,7 @@ export default function SchedulePage() {
   useEffect(() => {
     const YOUTUBE_API_KEY = process.env.NEXT_PUBLIC_YOUTUBE_API_KEY;
 
-    const TEST_CHANNEL_ID = 'UCX7YkU9nEeaoZbkVLVajcMg'; // テスト用のYouTubeチャンネルID
+    const TEST_CHANNEL_ID = 'UC5CwaMl1eIgY8h02uZw7u8A'; // テスト用のYouTubeチャンネルID(星街すいせい)
 
     if (!YOUTUBE_API_KEY) {
       setError("YouTube APIキーが設定されていません。'.env.local'を確認してください。");
