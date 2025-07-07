@@ -4,9 +4,12 @@
 import { redirect } from 'next/navigation';
 
 export default function RootPage() {
-  // 認証状態をチェック
-  // 後で作る
+  // 開発中はログインをスキップして、直接 /schedule にリダイレクト
+  // TODO: 後ほどこの行を削除し、以下の認証ロジックを有効に
+  redirect('/schedule');
   
+  // 実際の認証ロジック
+  {/*
   const isAuthenticated = false; // 仮で設定
 
   if (isAuthenticated) {
@@ -16,4 +19,5 @@ export default function RootPage() {
   }
 
   return null; // リダイレクトなので何もなし
+  */}
 }
