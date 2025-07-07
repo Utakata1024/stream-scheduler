@@ -4,11 +4,10 @@ import { useState } from "react";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { useRouter } from "next/navigation";
-import { sign } from "crypto";
 
 export default function LoginForm() {
   // ユーザーの入力値のための状態変数定義
-  const [id, setId] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null); // エラーメッセージ用
   const router = useRouter(); // useRouterフックの初期化
@@ -19,7 +18,7 @@ export default function LoginForm() {
     setError(null); // エラーメッセージをクリア
 
     try {
-      await signInWithEmailAndPassword(auth, id, password);
+      await signInWithEmailAndPassword(auth, email, password);
       router.push("/schedule"); // 成功したらスケジュールページへ
     } catch (err: any) {
       console.log("ログインエラー:", err);
@@ -44,12 +43,13 @@ export default function LoginForm() {
         </h2>
         <div>
           <h2 className="blocktext-sm font-medium text-gray-700 mb-1">
-            ユーザーID
+            メールアドレス
           </h2>
           <input
-            type="text"
-            value={id}
-            onChange={(e) => setId(e.target.value)}
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
             placeholder="ユーザーIDを入力"
             className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-base"
           />
@@ -62,6 +62,7 @@ export default function LoginForm() {
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+            required
             placeholder="パスワードを入力"
             className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-base"
           />
