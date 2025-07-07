@@ -22,8 +22,10 @@ export default function LoginForm() {
       router.push("/schedule"); // 成功したらスケジュールページへ
     } catch (err: any) {
       console.log("ログインエラー:", err);
-      if (err.code === 'auth/invalid-credential') {
-        setError('idまたはパスワードが間違っています。')
+      if (err.code === 'auth/wrong-password') {
+        setError('パスワードが間違っています。')
+      } else if (err.code === 'auth/user-not-found') {
+        setError('ユーザーが見つかりません。');
       } else if (err.code === 'auth/user-disabled') {
         setError('このアカウントは無効化されています。')
       } else {
@@ -42,7 +44,7 @@ export default function LoginForm() {
           ログイン
         </h2>
         <div>
-          <h2 className="blocktext-sm font-medium text-gray-700 mb-1">
+          <h2 className="block text-sm font-medium text-gray-700 mb-1">
             メールアドレス
           </h2>
           <input
@@ -50,7 +52,7 @@ export default function LoginForm() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
-            placeholder="ユーザーIDを入力"
+            placeholder="メールアドレスを入力"
             className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-base"
           />
         </div>
