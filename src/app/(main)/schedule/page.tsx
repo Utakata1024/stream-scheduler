@@ -9,6 +9,11 @@ export default function SchedulePage() {
   // アクティブなタブの状態管理
   const [activeTab, setActiveTab] = useState("現在配信中");
 
+  const handleTabClick = (label: string) => {
+    setActiveTab(label); // クリックされたボタンがアクティブに
+    // TODO: 将来的に、このactiveTabの値に応じて表示する配信データを切り替えるロジックをここに実装します
+  };
+
   // ダミーデータ(後でYouTube APIから取得したデータに
   const dummyStreams = [
       {
@@ -20,19 +25,23 @@ export default function SchedulePage() {
         streamUrl: "https://www.youtube.com/watch?v=dummy_live_stream1"
       },
       {
-        thumbnailUrl: "https://placehold.co/480x270/FF0000/FFFFFF?text=LIVE+1",
+        thumbnailUrl: "https://placehold.co/480x270/FF0000/FFFFFF?text=LIVE+2",
         title: "dummy2",
         channelName: "dummyChannel2",
-        time: "2025/07/07 20:00 - 22:00",
+        time: "2025/07/08 20:00 - 22:00",
         status: "upcoming" as const,
         streamUrl: "https://www.youtube.com/watch?v=dummy_live_stream2"
+      },
+      {
+        thumbnailUrl: "https://placehold.co/480x270/FF0000/FFFFFF?text=LIVE+3",
+        title: "dummy3",
+        channelName: "dummyChannel3",
+        time: "2025/07/06 20:00 - 22:00",
+        status: "ended" as const,
+        streamUrl: "https://www.youtube.com/watch?v=dummy_live_stream3"
       }
   ];
 
-  const handleTabClick = (label: string) => {
-    setActiveTab(label); // クリックされたボタンがアクティブに
-    // TODO: 将来的に、このactiveTabの値に応じて表示する配信データを切り替えるロジックをここに実装します
-  };
   return (
     <div className="min-h-screen bg-gray-100 p-8">
       <h1 className="text-4xl font-bold text-center mb-8">

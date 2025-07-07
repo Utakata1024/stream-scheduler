@@ -18,6 +18,7 @@ export default function ToggleButton({ label, isActive, onClick }: ToggleButtonP
   return (
     <button
       className={`${baseClasses} ${isActive ? activeClasses : inactiveClasses}`} // isActiveによってクラスを切り替え
+      onClick={onClick}
     >
       {label}
     </button>
