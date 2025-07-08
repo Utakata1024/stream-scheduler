@@ -4,7 +4,7 @@ interface StreamCardProps {
   thumbnailUrl: string; // サムネイルURL
   title: string; // タイトル
   channelName: string; // チャンネル名
-  time: string; // 配信日時
+  dateTime: string; // 配信日時
   status: "live" | "upcoming" | "ended"; // 配信ステータス'
   streamUrl: string; // 配信URL
 }
@@ -13,7 +13,7 @@ export default function StreamCard({
   thumbnailUrl,
   title,
   channelName,
-  time,
+  dateTime,
   status,
   streamUrl,
 }: StreamCardProps) {
@@ -56,7 +56,7 @@ export default function StreamCard({
           {/* チャンネル名 */}
           <p className="text-gray-600 text-sm mb-1">{channelName}</p>
           {/* 配信日時 */}
-          <p className="text-gray-600 text-sm">{time}</p>
+          <p className="text-gray-600 text-sm">{dateTime}</p>
           {/* 配信状態 */}
           <p className={`mt-2 ${statusClass}`}>{statusText}</p>
         </div>
