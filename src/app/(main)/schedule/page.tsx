@@ -54,7 +54,10 @@ export default function SchedulePage() {
   // activeTabに応じて表示する配信データをフィルタリング
   const filteredStreams = streams.filter((stream) => {
     if (activeTab === "直近") {
-      return true; 
+      // ライブと今後の配信を全て表示
+      // 現在のAPI呼び出しでは、正確な「終了済み」のライブ配信の判別困難
+      // より厳密な「直近」の実装には、API呼び出しの工夫やバックエンドでのデータ管理が必要
+      return stream.status === 'live' || stream.status === 'upcoming';
     } else if (activeTab === "現在配信中") {
       return stream.status === "live"; // 現在配信中の配信
     } else if (activeTab === "今後") {
