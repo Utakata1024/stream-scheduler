@@ -9,6 +9,7 @@ export default function LoginForm() {
   // ユーザーの入力値のための状態変数定義
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false); // パスワード表示切替用
   const [error, setError] = useState<string | null>(null); // エラーメッセージ用
   const router = useRouter(); // useRouterフックの初期化
 
@@ -17,10 +18,13 @@ export default function LoginForm() {
     e.preventDefault();
     setError(null); // エラーメッセージをクリア
 
+    // ログイン処理の実行
     try {
       await signInWithEmailAndPassword(auth, email, password);
-      router.push("/schedule"); // 成功したらスケジュールページへ
+      router.push("/schedule"); // 成功→スケジュールページへ
     } catch (err: any) {
+      // エラー処理
+      // エラーの種類に応じて適切なメッセージを設定
       console.log("ログインエラー:", err);
       if (err.code === 'auth/wrong-password') {
         setError('パスワードが間違っています。')
@@ -61,13 +65,16 @@ export default function LoginForm() {
             パスワード
           </h2>
           <input
-            type="password"
+            type={showPassword ? "text" : "password"}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
             placeholder="パスワードを入力"
             className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-base"
           />
+          <button type="button" onClick={() => setShowPassword(!showPassword)}>
+            {showPassword ? "非表示" : "表示"}
+          </button>
         </div>
         <div>
           <button
