@@ -23,7 +23,7 @@ export default function SchedulePage() {
   useEffect(() => {
     const YOUTUBE_API_KEY = process.env.NEXT_PUBLIC_YOUTUBE_API_KEY;
 
-    const TEST_CHANNEL_ID = 'UC5CwaMl1eIgY8h02uZw7u8A'; // テスト用のYouTubeチャンネルID(星街すいせい)
+    const TEST_CHANNEL_ID = 'UCvUc0m317LWTTPZoBQV479A'; // テスト用のYouTubeチャンネルID
 
     if (!YOUTUBE_API_KEY) {
       setError("YouTube APIキーが設定されていません。'.env.local'を確認してください。");
@@ -57,7 +57,7 @@ export default function SchedulePage() {
       // ライブと今後の配信を全て表示
       // 現在のAPI呼び出しでは、正確な「終了済み」のライブ配信の判別困難
       // より厳密な「直近」の実装には、API呼び出しの工夫やバックエンドでのデータ管理が必要
-      return stream.status === 'live' || stream.status === 'upcoming';
+      return true;
     } else if (activeTab === "現在配信中") {
       return stream.status === "live"; // 現在配信中の配信
     } else if (activeTab === "今後") {
