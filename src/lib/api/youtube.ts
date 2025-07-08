@@ -77,9 +77,9 @@ export async function fetchLiveAndUpcomingStreams(
     console.error("ライブ配信の取得に失敗しました:", error);
   }
 
-  // 取得した配信を日時でソート
+  // 取得した配信を日時でソート(降順)
   streams.sort(
-    (a, b) => new Date(a.dateTime).getTime() - new Date(b.dateTime).getTime()
+    (a, b) => new Date(b.dateTime).getTime() - new Date(a.dateTime).getTime()
   );
 
   return streams;
