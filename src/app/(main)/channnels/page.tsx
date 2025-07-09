@@ -73,7 +73,7 @@ export default function ChannelsPage() {
           登録済みチャンネル
         </h2>
         {channels.length === 0 ? (
-          <p className="ext-center text-gray-600">
+          <p className="text-center text-gray-600">
             まだ登録されたチャンネルはありません。
           </p>
         ) : (
