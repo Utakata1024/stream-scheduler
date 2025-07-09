@@ -41,6 +41,7 @@ export async function fetchLiveAndUpcomingStreams(
     console.log("YouTube Search API Response:", liveData);
 
     if (liveData.items) {
+      // 取得した各動画アイテムに対してループ処理
       liveData.items.forEach((item: any) => {
         // liveBroadCastContentが'upcoming'ならば今後の配信
         const liveBroadCastContent = item.snippet.liveBroadcastContent;
@@ -54,6 +55,7 @@ export async function fetchLiveAndUpcomingStreams(
           status = "ended"; // 予定がない場合は終了済みとする
         }
 
+        // 各動画itemから必要な情報を抽出してstreamsに追加
         streams.push({
           videoId: item.id.videoId,
           thumbnailUrl:
