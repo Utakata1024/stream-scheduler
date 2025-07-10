@@ -14,19 +14,19 @@ export default function ChannelsPage() {
 
   // チャンネルIDを追加する関数
   const handleAddChannel = async () => {
-    setErrorMessage(null); // エラーメッセージをリセット
-    setSuccessMessage(null); // 成功メッセージをリセット
+    setErrorMessage(null);
+    setSuccessMessage(null);
 
     // 入力値のトリミングと空チェック
     if (newChannelId.trim() === "") {
       alert("チャンネルIDを入力してください。");
       return;
     }
-    // 登録済みでないかチェック
+    // 登録済みかチェック
     const trimmedChannelId = newChannelId.trim();
     if (channels.some((c) => c.channelId === trimmedChannelId)) {
       alert("このチャンネルIDは既に登録されています。");
-      setNewChannelId(""); // 入力フィールドのクリア
+      setNewChannelId(""); // 入力欄クリア
       return;
     }
 
@@ -49,12 +49,12 @@ export default function ChannelsPage() {
 
       if (!channelDetails) {
         setErrorMessage("指定されたチャンネルIDが見つかりません");
-        setNewChannelId(''); // 入力欄クリア
+        setNewChannelId(""); // 入力欄クリア
         return;
       }
       // 新しいチャンネルを追加
       setChannels([...channels, channelDetails]);
-      setNewChannelId(""); // 入力フィールドのクリア
+      setNewChannelId(""); // 入力欄クリア
       setSuccessMessage("チャンネルが追加されました");
     } catch (error) {
       console.error("チャンネルの追加に失敗しました", error);
@@ -89,9 +89,11 @@ export default function ChannelsPage() {
         <p className="text-center text-red-500 text-sm mt-4">{errorMessage}</p>
       )}
       {successMessage && (
-        <p className="text-center text-green-600 text-sm mt-4">{successMessage}</p>
+        <p className="text-center text-green-600 text-sm mt-4">
+          {successMessage}
+        </p>
       )}
-      
+
       {/* チャンネルID入力フォーム */}
       <div className="bg-white p-6 rounded-lg shadow-md max-w-xl mx-auto mb-8">
         <h2 className="text-2xl font-semibold mb-4 text-center">
@@ -149,7 +151,9 @@ export default function ChannelsPage() {
                     {channel.channelName}
                   </span>
                   {/* デバッグ用にIDも表示 */}
-                  <span className="text-gray-500 text-xs hidden sm:inline-block">({channel.channelId})</span>
+                  <span className="text-gray-500 text-xs hidden sm:inline-block">
+                    ({channel.channelId})
+                  </span>
                 </div>
                 <button
                   onClick={() => handleDeleteChannel(channel.channelId)}
