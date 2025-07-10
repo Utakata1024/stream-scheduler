@@ -7,6 +7,7 @@ const nextConfig: NextConfig = {
     domains: [
       'placehold.co', 
       'i.ytimg.com',  // YouTube API連携用
+      'yt3.ggpht.com', // YouTubeチャンネルアイコン用
       // 他のドメインがあればここに追加
     ],
   },
