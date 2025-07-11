@@ -257,7 +257,7 @@ export default function ChannelsPage() {
           </div>
           <p className="text-sm text-gray-500 mt-3 text-center">
             ※チャンネルIDはYouTubeチャンネルのURLから取得できます。
-            (例:youtube.com/channel/<span className="underline">UC...</span>)
+            (例:youtube.com/channel/<span className="underline decoration-red-500">UC...</span>)
           </p>
         </div>
 
