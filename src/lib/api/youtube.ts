@@ -111,12 +111,9 @@ export async function fetchChannelDetails(
 
   try {
     const requestUrl = `${YOUTUBE_API_BASE_URL}/channels?part=snippet&id=${channelId}&key=${apiKey}`;
-    console.log("Fetching YouTube Channel Details from URL:", requestUrl); // デバッグ用
 
     const response = await fetch(requestUrl);
     const data = await response.json();
-
-    console.log("YouTube Channel Details API Response:", data); // デバッグ用ログ
 
     if (data.items && data.items.length > 0) {
       const item = data.items[0]; // 最初のアイテムが該当チャンネルの情報

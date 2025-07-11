@@ -14,7 +14,6 @@ import {
 import { onAuthStateChanged } from "firebase/auth"; // ユーザー認証状態の監視用
 import { db, auth } from "@/lib/firebase";
 import { fetchChannelDetails, YoutubeChannelData } from "@/lib/api/youtube";
-import { channel } from "diagnostics_channel";
 
 export default function ChannelsPage() {
   const [channels, setChannels] = useState<YoutubeChannelData[]>([]); // 登録済みチャンネルIDのリスト
@@ -96,7 +95,7 @@ export default function ChannelsPage() {
 
     // 入力値のトリミングと空チェック
     if (newChannelId.trim() === "") {
-      alert("チャンネルIDを入力してください。");
+      setErrorMessage("チャンネルIDを入力してください。");
       return;
     }
 
