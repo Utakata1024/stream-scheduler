@@ -3,14 +3,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import {
-  doc, // 個別のドキュメント
-  setDoc, // ドキュメントを書き込む
-  deleteDoc, // ドキュメント削除
-  collection,
-  query, // クエリ(検索条件)を作成
-  getDocs, // クエリの結果を取得
-} from "firebase/firestore";
+import { doc, setDoc, deleteDoc, collection, query, getDocs } from "firebase/firestore";
 import { onAuthStateChanged } from "firebase/auth"; // ユーザー認証状態の監視用
 import { db, auth } from "@/lib/firebase";
 import { fetchChannelDetails, YoutubeChannelData } from "@/lib/api/youtube";
@@ -264,7 +257,7 @@ export default function ChannelsPage() {
           </div>
           <p className="text-sm text-gray-500 mt-3 text-center">
             ※チャンネルIDはYouTubeチャンネルのURLから取得できます。
-            (例:`youtube.com/channel/`**`UC...`**)
+            (例:youtube.com/channel/<span className="underline decoration-red-500">UC...</span>)
           </p>
         </div>
 
