@@ -104,10 +104,6 @@ export default function ChannelsPage() {
       setErrorMessage("ログインしていません。");
       return;
     }
-    if (newChannelId.trim() === "") {
-      setErrorMessage("チャンネルIDを入力してください。");
-      return;
-    }
 
     // 登録済みかチェック
     const trimmedChannelId = newChannelId.trim();
