@@ -11,6 +11,12 @@ export interface YoutubeStreamData {
   videoId: string; // YouTube APIから取得する動画ID
 }
 
+export interface YoutubeChannelData {
+  channelId: string; // YouTubeチャンネルのID
+  channelName: string; // チャンネル名
+  thumbnailUrl: string; // チャンネルのサムネイルURL
+}
+
 /**
  * 指定されたチャンネルのライブ配信と今後の配信（プレミア公開など）を取得する関数
  * @param channelId 取得したいYouTubeチャンネルのID
@@ -85,4 +91,43 @@ export async function fetchLiveAndUpcomingStreams(
   );
 
   return streams;
+}
+
+/**
+ * 指定されたチャンネルの情報を取得する関数
+ * @param channelId 取得したいYouTubeチャンネルのID
+ * @param apiKey YouTube Data APIキー
+ * @returns チャンネル情報
+ */
+
+export async function fetchChannelDetails(
+  channelId: string,
+  apiKey: string,
+): Promise<YoutubeChannelData | null> {
+  if (!apiKey) {
+    console.error("APIキーが設定されていません");
+    return null;
+  }
+
+  try {
+    const requestUrl = `${YOUTUBE_API_BASE_URL}/channels?part=snippet&id=${channelId}&key=${apiKey}`;
+
+    const response = await fetch(requestUrl);
+    const data = await response.json();
+
+    if (data.items && data.items.length > 0) {
+      const item = data.items[0]; // 最初のアイテムが該当チャンネルの情報
+      return {
+        channelId: item.id,
+        channelName: item.snippet.title,
+        thumbnailUrl: item.snippet.thumbnails.default?.url || '',
+      };
+    } else {
+      // チャンネルが見つからない場合
+      return null;
+    }
+  } catch (error) {
+    console.error(`チャンネルID ${channelId} の詳細取得に失敗しました:`, error);
+    return null;
+  }
 }
