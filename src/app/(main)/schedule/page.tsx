@@ -4,7 +4,10 @@
 import { useEffect, useState } from "react";
 import ToggleButton from "@/components/ui/ToggleButton";
 import StreamCard from "@/components/schedule/StreamCard";
-import { fetchLiveAndUpcomingStreams, YoutubeStreamData } from "@/lib/api/youtube";
+import {
+  fetchLiveAndUpcomingStreams,
+  YoutubeStreamData,
+} from "@/lib/api/youtube";
 
 export default function SchedulePage() {
   // アクティブなタブの状態管理
@@ -23,10 +26,12 @@ export default function SchedulePage() {
   useEffect(() => {
     const YOUTUBE_API_KEY = process.env.NEXT_PUBLIC_YOUTUBE_API_KEY;
 
-    const TEST_CHANNEL_ID = 'UC9p_lqQ0FEDz327Vgf5JwqA'; // テスト用のYouTubeチャンネルID
+    const TEST_CHANNEL_ID = "UC9p_lqQ0FEDz327Vgf5JwqA"; // テスト用のYouTubeチャンネルID
 
     if (!YOUTUBE_API_KEY) {
-      setError("YouTube APIキーが設定されていません。'.env.local'を確認してください。");
+      setError(
+        "YouTube APIキーが設定されていません。'.env.local'を確認してください。"
+      );
       setLoading(false);
       return;
     }
@@ -68,9 +73,7 @@ export default function SchedulePage() {
 
   return (
     <div className="min-h-screen bg-gray-100 p-8">
-      <h1 className="text-4xl font-bold text-center mb-8">
-        スケジュール
-      </h1>
+      <h1 className="text-4xl font-bold text-center mb-8">スケジュール</h1>
       {/* タブ切り替えボタン */}
       <div className="bg-white p-4 rounded-lg shadow-md mb-6 flex justify-center gap-4">
         {["直近", "現在配信中", "今後"].map((label, index) => (
@@ -93,7 +96,7 @@ export default function SchedulePage() {
       {/* エラーが発生した場合の表示 */}
       {error && (
         <div className="text-center text-red-500 mb-4">
-          <p>エラー: {error}</p>  
+          <p>エラー: {error}</p>
         </div>
       )}
 
@@ -105,20 +108,20 @@ export default function SchedulePage() {
       )}
 
       {/* 配信カードの表示 */}
-      { !loading && !error && filteredStreams.length > 0 && (
+      {!loading && !error && filteredStreams.length > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredStreams.map((stream) => (
-          <StreamCard
-            key={stream.videoId} // 実際は配信IDなどユニークな値を使うべきですが、今回は仮にindex
-            thumbnailUrl={stream.thumbnailUrl}
-            title={stream.title}
-            channelName={stream.channelName}
-            dateTime={stream.dateTime}
-            status={stream.status}
-            streamUrl={stream.streamUrl}
-          />
-        ))}
-      </div>
+          {filteredStreams.map((stream) => (
+            <StreamCard
+              key={stream.videoId}
+              thumbnailUrl={stream.thumbnailUrl}
+              title={stream.title}
+              channelName={stream.channelName}
+              dateTime={stream.dateTime}
+              status={stream.status}
+              streamUrl={stream.streamUrl}
+            />
+          ))}
+        </div>
       )}
     </div>
   );
