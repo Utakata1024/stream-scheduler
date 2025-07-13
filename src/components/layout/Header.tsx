@@ -42,7 +42,9 @@ export default function Header() {
     <header className="bg-indigo-700 text-white p-4 shadow-md">
       <div className="container mx-auto flex justify-between items-center">
         {/* アプリのタイトル/ロゴ */}
-        <Link href="/">Stream Scheduler</Link>
+        <Link href="/" className="text-2xl font-bold hover:text-indigo-200 transition-colors duration-200">
+          Stream Scheduler
+        </Link>
 
         {!isLoginPage && user ? (
           <nav>
@@ -82,8 +84,7 @@ export default function Header() {
             </ul>
           </nav>
         ) : (
-          !isLoginPage &&
-          !user && ( // 非ログイン状態で、かつログインページ以外の場合にログインボタンを表示
+          !isLoginPage && !user && ( // 非ログイン状態で、かつログインページ以外の場合にログインボタンを表示
             <Link
               href="/login"
               className="text-lg hover:text-indigo-200 transition-colors duration-200"
