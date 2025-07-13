@@ -1,23 +1,38 @@
 // トップページ
 // 認証状態に応じてリダイレクト処理
 
+'use client';
+
 import { redirect } from 'next/navigation';
+import { useEffect, useState } from 'react';
+import { onAuthStateChanged, User } from 'firebase/auth';
+import { auth } from "@/lib/firebase";
 
 export default function RootPage() {
-  // 開発中はログインをスキップして、直接 /schedule にリダイレクト
-  // TODO: 後ほどこの行を削除し、以下の認証ロジックを有効に
-  redirect('/schedule');
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
   
-  // 実際の認証ロジック
-  {/*
-  const isAuthenticated = false; // 仮で設定
+  // 認証状態の監視
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+      setLoading(false);
+    });
+    return () => unsubscribe();
+  }, []);
 
-  if (isAuthenticated) {
-    redirect('/schedule'); // 認証済み→スケジュールページへ
-  } else {
-    redirect('/login'); // 未認証→ログインページへ
+  // 認証状態のロード中は何もしない（またはローディング表示）
+  // ユーザー情報が取得されるまで、一時的なメッセージを表示
+  if (loading) {
+    return <div className="flex min-h-screen items-center justify-center text-xl">認証状態を確認中...</div>;
   }
 
-  return null; // リダイレクトなので何もなし
-  */}
+  // 認証済み→スケジュールページへ
+  if (user) {
+    redirect('/schedule');
+  } else { // 未認証→ログインページへ
+    redirect('/login')
+  }
+
+  return null;
 }
