@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import ToggleButton from "@/components/ui/ToggleButton";
 import StreamCard from "@/components/schedule/StreamCard";
 import { fetchLiveAndUpcomingStreams, YoutubeStreamData } from "@/lib/api/youtube";
-import { onAuthStateChanged } from "firebase/auth";
+import { onAuthStateChanged, User } from "firebase/auth";
 import { collection, query, getDocs, serverTimestamp } from "firebase/firestore";
 import { db, auth } from "@/lib/firebase";
 import { YoutubeChannelData } from "@/lib/api/youtube";
@@ -16,7 +16,7 @@ export default function SchedulePage() {
   const [streams, setStreams] = useState<YoutubeStreamData[]>([]);
   const [loadingStreams, setLoadingStreams] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [user, setUser] = useState<any | null>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [loadingUser, setLoadingUser] = useState(true);
 
   // タブがクリックされたときの処理
