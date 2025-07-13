@@ -59,7 +59,7 @@ export default function Header() {
               </li>
               <li>
                 <Link
-                  href="/channnels"
+                  href="/channels"
                   className="text-lg hover:text-indigo-200 transition-colors duration-200"
                 >
                   チャンネル管理
