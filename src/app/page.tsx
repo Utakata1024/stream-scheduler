@@ -3,9 +3,8 @@
 
 'use client';
 
-import { redirect } from 'next/navigation';
+import { redirect, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/router';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { auth } from "@/lib/firebase";
 
