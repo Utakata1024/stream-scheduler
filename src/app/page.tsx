@@ -5,7 +5,7 @@
 
 import { redirect } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { useRouter } from 'react';
+import { useRouter } from 'next/router';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { auth } from "@/lib/firebase";
 
@@ -38,6 +38,6 @@ export default function RootPage() {
       }
     }
   }, [loading, user]);
-  
+
   return null;
 }
