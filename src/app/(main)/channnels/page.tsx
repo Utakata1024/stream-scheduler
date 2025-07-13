@@ -4,7 +4,7 @@
 
 import { useEffect, useState } from "react";
 import { doc, setDoc, deleteDoc, collection, query, getDocs } from "firebase/firestore";
-import { onAuthStateChanged } from "firebase/auth"; // ユーザー認証状態の監視用
+import { onAuthStateChanged, User } from "firebase/auth"; // ユーザー認証状態の監視用
 import { db, auth } from "@/lib/firebase";
 import { fetchChannelDetails, YoutubeChannelData } from "@/lib/api/youtube";
 
@@ -14,7 +14,7 @@ export default function ChannelsPage() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null); // エラーメッセージ用
   const [successMessage, setSuccessMessage] = useState<string | null>(null); //成功メッセージ用
   const [addingChannel, setAddingChannel] = useState(false); // チャンネル追加中のローディング状態
-  const [user, setUser] = useState<any | null>(null); // ログインユーザー情報を保持
+  const [user, setUser] = useState<User | null>(null); // ログインユーザー情報を保持
   const [loading, setLoading] = useState(true); // ロード状態を管理
 
   // ユーザーのログイン状態を監視してFirestoreからデータを読み込むロジック
