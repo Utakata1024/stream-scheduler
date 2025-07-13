@@ -11,6 +11,8 @@ import { auth } from "@/lib/firebase";
 export default function RootPage() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+
+  const router = useRouter(); // ここに移動
   
   // 認証状態の監視
   useEffect(() => {
@@ -21,14 +23,8 @@ export default function RootPage() {
     return () => unsubscribe();
   }, []);
 
-  // 認証状態のロード中は何もしない（またはローディング表示）
-  // ユーザー情報が取得されるまで、一時的なメッセージを表示
-  if (loading) {
-    return <div className="flex min-h-screen items-center justify-center text-xl">認証状態を確認中...</div>;
-  }
-
+  // 認証状態に応じてリダイレクト
   useEffect(() => {
-    const router = useRouter();
     if (!loading) {
       if (user) {
         router.push('/schedule');
@@ -37,6 +33,12 @@ export default function RootPage() {
       }
     }
   }, [loading, user]);
+
+  // 認証状態のロード中は何もしない（またはローディング表示）
+  // ユーザー情報が取得されるまで、一時的なメッセージを表示
+  if (loading) {
+    return <div className="flex min-h-screen items-center justify-center text-xl">認証状態を確認中...</div>;
+  }
 
   return null;
 }
