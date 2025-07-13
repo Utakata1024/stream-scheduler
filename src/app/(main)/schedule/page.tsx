@@ -58,7 +58,7 @@ export default function SchedulePage() {
     }
 
     // 登録チャンネルから配信情報取得
-    const getStreamsFromRegisterdChannels = async () => {
+    const getStreamsFromRegisteredChannels = async () => {
       setLoadingStreams(true);
       setError(null);
       let allFetchedStreams: YoutubeStreamData[] = [];
@@ -114,7 +114,7 @@ export default function SchedulePage() {
       }
     };
 
-    getStreamsFromRegisterdChannels(); //関数を実行してデータ取得
+    getStreamsFromRegisteredChannels(); //関数を実行してデータ取得
   }, [user, loadingUser, db]); // userオブジェクトとloadingUser、dbが変更されたときに再実行
 
   // activeTabに応じて表示する配信データをフィルタリング

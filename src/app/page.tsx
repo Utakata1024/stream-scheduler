@@ -5,6 +5,7 @@
 
 import { redirect } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import { useRouter } from 'react';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { auth } from "@/lib/firebase";
 
@@ -27,12 +28,16 @@ export default function RootPage() {
     return <div className="flex min-h-screen items-center justify-center text-xl">認証状態を確認中...</div>;
   }
 
-  // 認証済み→スケジュールページへ
-  if (user) {
-    redirect('/schedule');
-  } else { // 未認証→ログインページへ
-    redirect('/login')
-  }
-
+  useEffect(() => {
+    const router = useRouter();
+    if (!loading) {
+      if (user) {
+        router.push('/schedule');
+      } else {
+        router.push('/login');
+      }
+    }
+  }, [loading, user]);
+  
   return null;
 }
