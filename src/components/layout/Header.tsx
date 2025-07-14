@@ -7,7 +7,7 @@ import { onAuthStateChanged, signOut, User } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 
 export default function Header() {
-  const pathname = usePathname(); // 現在のURLパスを取得
+  const pathname = usePathname();
   const router = useRouter();
   const isLoginPage = pathname === "/login";
 

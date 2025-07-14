@@ -1,14 +1,13 @@
 "use client";
 
 import Header from "@/components/layout/Header";
-import Footer from "@/components/layout/Footer"; // フッターコンポーネントをインポート
-import { useEffect, useState } from "react"; // 認証状態を管理するため
-import { onAuthStateChanged, User } from "firebase/auth"; // Firebase認証状態の監視用
+import Footer from "@/components/layout/Footer";
+import { useEffect, useState } from "react";
+import { onAuthStateChanged, User } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { useRouter, usePathname } from "next/navigation";
 
 export default function MainLayout({
-  // コンポーネント名を MainLayout にします
   children,
 }: Readonly<{
   children: React.ReactNode;

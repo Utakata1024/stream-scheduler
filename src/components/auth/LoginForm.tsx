@@ -6,17 +6,16 @@ import { auth } from "@/lib/firebase";
 import { useRouter } from "next/navigation";
 
 export default function LoginForm() {
-  // ユーザーの入力値のための状態変数定義
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false); // パスワード表示切替用
-  const [error, setError] = useState<string | null>(null); // エラーメッセージ用
-  const router = useRouter(); // useRouterフックの初期化
+  const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
 
   // フォーム送信時の処理
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null); // エラーメッセージをクリア
+    setError(null);
 
     // ログイン処理の実行
     try {
@@ -24,7 +23,6 @@ export default function LoginForm() {
       router.push("/schedule"); // 成功→スケジュールページへ
     } catch (err: any) {
       // エラー処理
-      // エラーの種類に応じて適切なメッセージを設定
       console.log("ログインエラー:", err);
       if (err.code === 'auth/wrong-password') {
         setError('パスワードが間違っています。')
