@@ -4,25 +4,25 @@
 
 import { useEffect, useState } from "react";
 import { doc, setDoc, deleteDoc, collection, query, getDocs } from "firebase/firestore";
-import { onAuthStateChanged, User } from "firebase/auth"; // ユーザー認証状態の監視用
+import { onAuthStateChanged, User } from "firebase/auth";
 import { db, auth } from "@/lib/firebase";
 import { fetchChannelDetails, YoutubeChannelData } from "@/lib/api/youtube";
 
 export default function ChannelsPage() {
-  const [channels, setChannels] = useState<YoutubeChannelData[]>([]); // 登録済みチャンネルIDのリスト
-  const [newChannelId, setNewChannelId] = useState<string>(""); // 新規チャンネルID入力用
-  const [errorMessage, setErrorMessage] = useState<string | null>(null); // エラーメッセージ用
-  const [successMessage, setSuccessMessage] = useState<string | null>(null); //成功メッセージ用
-  const [addingChannel, setAddingChannel] = useState(false); // チャンネル追加中のローディング状態
-  const [user, setUser] = useState<User | null>(null); // ログインユーザー情報を保持
-  const [loading, setLoading] = useState(true); // ロード状態を管理
+  const [channels, setChannels] = useState<YoutubeChannelData[]>([]);
+  const [newChannelId, setNewChannelId] = useState<string>("");
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [addingChannel, setAddingChannel] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
 
   // ユーザーのログイン状態を監視してFirestoreからデータを読み込むロジック
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       setUser(currentUser); // ユーザー情報を更新
       if (currentUser) {
-        // ログインしている場合のみデータを読み込む
+        // ログイン時→データを読み込む
         if (db) {
           await fetchAndLoadChannels(currentUser.uid);
         } else {
@@ -31,12 +31,12 @@ export default function ChannelsPage() {
           setLoading(false);
         }
       } else {
-        // ログインしていない場合はチャンネルリストを空に
+        // 非ログイン→チャンネルリストを空に
         setChannels([]);
         setLoading(false);
       }
     });
-    return () => unsubscribe(); // クリーンアップ
+    return () => unsubscribe();
   }, []);
 
   // Firestoreからチャンネルデータを取得する関数
@@ -51,7 +51,6 @@ export default function ChannelsPage() {
       setLoading(false);
       return;
     }
-
     if (!db) {
       console.error("Firestoreが初期化されていません");
       setErrorMessage("データベースを利用できません");
@@ -59,17 +58,18 @@ export default function ChannelsPage() {
       return;
     }
 
-    const userChannelsRef = collection(db, `users/${uid}/channels`); // ユーザーごとのコレクションパス
-    const q = query(userChannelsRef); // クエリを作成
+    // ユーザーのチャンネル情報取得・リスト更新
+    const userChannelsRef = collection(db, `users/${uid}/channels`);
+    const q = query(userChannelsRef);
     const fetchedChannelData: YoutubeChannelData[] = [];
     try {
-      const querySnapshot = await getDocs(q); // クエリの結果を取得
+      const querySnapshot = await getDocs(q);
       querySnapshot.forEach((doc) => {
-        const data = doc.data(); // ドキュメントのフィールドデータ取得
+        const data = doc.data();
         fetchedChannelData.push({
-          channelId: doc.id, // ドキュメントIDを追加
-          channelName: data.channelName || "チャンネル名不明", // Firestoreに保存された名前
-          thumbnailUrl: data.thumbnailUrl || "", // Firestoreに保存されたサムネイルURL
+          channelId: doc.id,
+          channelName: data.channelName || "チャンネル名不明",
+          thumbnailUrl: data.thumbnailUrl || "",
         });
       });
       setChannels(fetchedChannelData); // チャンネルリストを更新
@@ -77,7 +77,7 @@ export default function ChannelsPage() {
       console.error("チャンネルの取得に失敗しました", error);
       setErrorMessage("チャンネルの取得に失敗しました");
     } finally {
-      setLoading(false); // ロード状態を終了
+      setLoading(false);
     }
   };
 
@@ -86,36 +86,30 @@ export default function ChannelsPage() {
     setErrorMessage(null);
     setSuccessMessage(null);
 
-    // 入力値のトリミングと空チェック
     if (newChannelId.trim() === "") {
       setErrorMessage("チャンネルIDを入力してください。");
       return;
     }
-
     if (!user) {
-      // ユーザーがログインしていない場合
       setErrorMessage("ログインしていません。");
       return;
     }
-
     // 登録済みかチェック
     const trimmedChannelId = newChannelId.trim();
     if (channels.some((c) => c.channelId === trimmedChannelId)) {
       setErrorMessage("このチャンネルIDは既に登録されています。");
-      setNewChannelId(""); // 入力欄クリア
+      setNewChannelId("");
       return;
     }
 
     setAddingChannel(true); // チャンネル追加中のローディング開始
 
-    // YouTubeAPIキーの取得
     const YOUTUBE_API_KEY = process.env.NEXT_PUBLIC_YOUTUBE_API_KEY;
     if (!YOUTUBE_API_KEY) {
       setErrorMessage("YouTube APIキーが設定されていません");
       setAddingChannel(false);
       return;
     }
-
     if (!db) {
       console.error("Firestoreが初期化されていません");
       setErrorMessage("データベースを利用できません");
@@ -150,13 +144,13 @@ export default function ChannelsPage() {
 
       // 新しいチャンネルを追加
       setChannels([...channels, channelDetails]);
-      setNewChannelId(""); // 入力欄クリア
+      setNewChannelId("");
       setSuccessMessage("チャンネルが追加されました");
     } catch (error) {
       console.error("チャンネルの追加に失敗しました", error);
       setErrorMessage("チャンネルの追加に失敗しました");
     } finally {
-      setAddingChannel(false); // try, catchどちらを通ってもここでローディング終了
+      setAddingChannel(false); // ローディング終了
     }
   };
 
@@ -289,7 +283,7 @@ export default function ChannelsPage() {
                     <span className="font-medium text-gray-800 break-all">
                       {channel.channelName}
                     </span>
-                    {/* デバッグ用にIDも表示 */}
+                    {/* チャンネルIDの表示 */}
                     <span className="text-gray-500 text-xs hidden sm:inline-block">
                       ({channel.channelId})
                     </span>

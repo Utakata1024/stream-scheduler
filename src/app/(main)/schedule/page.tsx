@@ -11,7 +11,6 @@ import { db, auth } from "@/lib/firebase";
 import { YoutubeChannelData } from "@/lib/api/youtube";
 
 export default function SchedulePage() {
-  // アクティブなタブの状態管理
   const [activeTab, setActiveTab] = useState("直近");
   const [streams, setStreams] = useState<YoutubeStreamData[]>([]);
   const [loadingStreams, setLoadingStreams] = useState(true);
@@ -21,8 +20,7 @@ export default function SchedulePage() {
 
   // タブがクリックされたときの処理
   const handleTabClick = (label: string) => {
-    setActiveTab(label); // クリックされたボタンがアクティブに
-    // TODO: 将来的に、このactiveTabの値に応じて表示する配信データを切り替えるロジックをここに実装します
+    setActiveTab(label);
   };
 
   // ユーザーのログイン状態を監視
@@ -32,7 +30,7 @@ export default function SchedulePage() {
       setLoadingUser(false);
     });
     return () => unsubscribe();
-  }, []); // authが変更されない限り一度だけ実行
+  }, []);
 
   // ユーザーがログインしたら登録チャンネルを取得し、その配信情報をフェッチ
   useEffect(() => {
@@ -49,7 +47,6 @@ export default function SchedulePage() {
       setLoadingStreams(false);
       return;
     }
-
     if (!db) {
       console.error("Firestore DB is not initialized.");
       setError("データベースが利用できません");
@@ -64,7 +61,7 @@ export default function SchedulePage() {
       let allFetchedStreams: YoutubeStreamData[] = [];
 
       try {
-        // 1. Firestoreからユーザーの登録チャンネルのID取得
+        // Firestoreからユーザーの登録チャンネルのID取得
         const userChannelsRef = collection(db, `users/${user.uid}/channels`);
         const q = query(userChannelsRef);
         const querySnapshot = await getDocs(q);
@@ -80,9 +77,7 @@ export default function SchedulePage() {
           return;
         }
 
-        // 2. 各登録チャンネルの配信情報をYouTube APIから取得
-        // Promise.allSettled を使うことで、どれか一つのAPI呼び出しが失敗しても、
-        // 他の成功した呼び出しの結果は取得できるようにする
+        // 各登録チャンネルの配信情報をYouTube APIから取得
         const fetchPromises = registerChannelIds.map(async (channelId) => {
           try {
             return await fetchLiveAndUpcomingStreams(channelId, YOUTUBE_API_KEY);
@@ -92,7 +87,7 @@ export default function SchedulePage() {
           }
         });
 
-        const results = await Promise.allSettled(fetchPromises);
+        const results = await Promise.allSettled(fetchPromises); // 失敗しても続行するために
 
         // 成功した結果のみを集約
         results.forEach(result => {
@@ -114,7 +109,7 @@ export default function SchedulePage() {
       }
     };
 
-    getStreamsFromRegisteredChannels(); //関数を実行してデータ取得
+    getStreamsFromRegisteredChannels();
   }, [user, loadingUser, db]); // userオブジェクトとloadingUser、dbが変更されたときに再実行
 
   // activeTabに応じて表示する配信データをフィルタリング
@@ -132,7 +127,6 @@ export default function SchedulePage() {
     return false; // その他のタブは表示しない
   });
 
-  // UIのローディング表示ロジックを修正
   const isLoading = loadingUser || loadingStreams;
 
   return (

@@ -6,15 +6,15 @@ export interface YoutubeStreamData {
   title: string;
   channelName: string;
   dateTime: string;
-  status: "live" | "upcoming" | "ended"; // APIから取得した情報で判断
+  status: "live" | "upcoming" | "ended";
   streamUrl: string;
   videoId: string; // YouTube APIから取得する動画ID
 }
 
 export interface YoutubeChannelData {
-  channelId: string; // YouTubeチャンネルのID
-  channelName: string; // チャンネル名
-  thumbnailUrl: string; // チャンネルのサムネイルURL
+  channelId: string;
+  channelName: string;
+  thumbnailUrl: string;
 }
 
 /**

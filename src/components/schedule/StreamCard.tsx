@@ -1,12 +1,12 @@
 import Image from "next/image";
 
 interface StreamCardProps {
-  thumbnailUrl: string; // サムネイルURL
-  title: string; // タイトル
-  channelName: string; // チャンネル名
-  dateTime: string; // 配信日時
-  status: "live" | "upcoming" | "ended"; // 配信ステータス'
-  streamUrl: string; // 配信URL
+  thumbnailUrl: string;
+  title: string;
+  channelName: string;
+  dateTime: string;
+  status: "live" | "upcoming" | "ended";
+  streamUrl: string;
 }
 
 export default function StreamCard({

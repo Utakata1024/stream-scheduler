@@ -1,5 +1,4 @@
 // トップページ
-// 認証状態に応じてリダイレクト処理
 
 'use client';
 
@@ -12,7 +11,7 @@ export default function RootPage() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const router = useRouter(); // ここに移動
+  const router = useRouter();
   
   // 認証状態の監視
   useEffect(() => {
