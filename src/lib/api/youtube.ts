@@ -36,34 +36,53 @@ export async function fetchLiveAndUpcomingStreams(
   const streams: YoutubeStreamData[] = [];
 
   try {
-    // ライブ配信の検索
-    const requestUrl = `${YOUTUBE_API_BASE_URL}/search?part=snippet&channelId=${channelId}&type=video&order=date&maxResults=20&key=${apiKey}`;
-    console.log("Fetching YouTube API from URL:", requestUrl);
+    // ライブ配信の動画ID検索
+    const searchUrl = `${YOUTUBE_API_BASE_URL}/search?part=id&channelId=${channelId}&eventType=upcoming&type=video&key=${apiKey}`;
+    console.log("Fetching YouTube API for live streams:", searchUrl);
 
-    const response = await fetch(requestUrl);
-    const liveData = await response.json();
+    const searchResponse = await fetch(searchUrl);
+    const searchData = await searchResponse.json();
 
-    // ここでレスポンス全体をコンソールに出力して確認
-    console.log("YouTube Search API Response:", liveData);
+    if (!searchData.items || searchData.items.length === 0) {
+      console.log("ライブ配信が見つかりませんでした。");
+      return [];
+    }
 
-    if (liveData.items) {
-      // 取得した各動画アイテムに対してループ処理
-      liveData.items.forEach((item: any) => {
-        // liveBroadCastContentが'upcoming'ならば今後の配信
-        const liveBroadCastContent = item.snippet.liveBroadcastContent;
-        let status: "live" | "upcoming" | "ended" = "ended"; // デフォルトは終了済み
+    const videoIds = searchData.items.map((item: any) => item.id.videoId).join(",");
 
-        if (liveBroadCastContent === "live") {
-          status = "live";
-        } else if (liveBroadCastContent === "upcoming") {
-          status = "upcoming";
-        } else if (liveBroadCastContent === "none") {
-          status = "ended"; // 予定がない場合は終了済みとする
+    // 取得した動画IDを使って、詳細情報を取得
+    const videosUrl = `${YOUTUBE_API_BASE_URL}/videos?part=snippet,liveStreamingDetails&id=${videoIds}&key=${apiKey}`;
+    console.log("Fetching YouTube API for stream details:", videosUrl);
+
+    const videosResponse = await fetch(videosUrl);
+    const videosData = await videosResponse.json();
+    console.log("Videos data:", videosData);
+
+    if (videosData.items) {
+      videosData.items.forEach((item: any) => {
+        const liveDetails = item.liveStreamingDetails;
+        
+        // liveStreamingDetailsが存在しない場合は動画ではないと判断
+        if (!liveDetails) {
+          return;
         }
 
-        // 各動画itemから必要な情報を抽出してstreamsに追加
+        let status: "live" | "upcoming" | "ended" = "ended";
+        let dateTime = item.snippet.publishedAt; // デフォルトは公開日時
+
+        if (liveDetails.actualEndTime) {
+          status = "ended";
+          dateTime = liveDetails.actualEndTime;
+        } else if (liveDetails.actualStartTime) {
+          status = "live";
+          dateTime = liveDetails.actualStartTime;
+        } else if (liveDetails.scheduledStartTime) {
+          status = "upcoming";
+          dateTime = liveDetails.scheduledStartTime;
+        }
+
         streams.push({
-          videoId: item.id.videoId,
+          videoId: item.id,
           thumbnailUrl:
             item.snippet.thumbnails.high?.url || // high品質を優先
             item.snippet.thumbnails.medium?.url || // medium品質を次に
@@ -71,13 +90,9 @@ export async function fetchLiveAndUpcomingStreams(
             "",
           title: item.snippet.title,
           channelName: item.snippet.channelTitle,
-          // 予定開始時刻は liveStreamingDetails にあることが多いが、search APIのsnippetにはpublishedAtしかない場合も
-          // より正確な時刻が必要なら videos.list API を追加で叩く必要があるが、今回はpublishedAtで簡略化
-          dateTime: new Date(item.snippet.publishedAt).toLocaleDateString(
-            "ja-JP"
-          ), // 公開日時を日本語で
+          dateTime: new Date(dateTime).toLocaleDateString("ja-JP"),
           status: status,
-          streamUrl: `https://www.youtube.com/watch?v=${item.id.videoId}`,
+          streamUrl: `https://www.youtube.com/watch?v=${item.id}`,
         });
       });
     }
