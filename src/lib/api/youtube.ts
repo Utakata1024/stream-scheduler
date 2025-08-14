@@ -33,22 +33,35 @@ export async function fetchLiveAndUpcomingStreams(
     return [];
   }
 
-  const streams: YoutubeStreamData[] = [];
-
   try {
-    // ライブ配信の動画ID検索
-    const searchUrl = `${YOUTUBE_API_BASE_URL}/search?part=id&channelId=${channelId}&eventType=upcoming&type=video&key=${apiKey}`;
-    console.log("Fetching YouTube API for live streams:", searchUrl);
+    // 配信中の動画ID検索
+    const liveSearchUrl = `${YOUTUBE_API_BASE_URL}/search?part=id&channelId=${channelId}&eventType=live&type=video&maxResults=50&key=${apiKey}`;
+    const liveResponse = await fetch(liveSearchUrl);
+    const liveSearchData = await liveResponse.json();
 
-    const searchResponse = await fetch(searchUrl);
-    const searchData = await searchResponse.json();
+    // 今後の配信の動画ID検索
+    const upcomingSearchUrl = `${YOUTUBE_API_BASE_URL}/search?part=id&channelId=${channelId}&eventType=upcoming&type=video&maxResults=50&key=${apiKey}`;
+    const upcomingResponse = await fetch(upcomingSearchUrl);
+    const upcomingSearchData = await upcomingResponse.json();
 
-    if (!searchData.items || searchData.items.length === 0) {
+    // ライブと今後の配信の動画IDを結合
+    const liveVideoIds =
+      liveSearchData && liveSearchData.items
+        ? liveSearchData.items.map((item: any) => item.id.videoId)
+        : [];
+    const upcomingVideoIds =
+      upcomingSearchData && upcomingSearchData.items
+        ? upcomingSearchData.items.map((item: any) => item.id.videoId)
+        : [];
+
+    const videoIds = [...new Set([...liveVideoIds, ...upcomingVideoIds])].join(
+      ","
+    );
+
+    if (!videoIds) {
       console.log("ライブ配信が見つかりませんでした。");
       return [];
     }
-
-    const videoIds = searchData.items.map((item: any) => item.id.videoId).join(",");
 
     // 取得した動画IDを使って、詳細情報を取得
     const videosUrl = `${YOUTUBE_API_BASE_URL}/videos?part=snippet,liveStreamingDetails&id=${videoIds}&key=${apiKey}`;
@@ -56,19 +69,20 @@ export async function fetchLiveAndUpcomingStreams(
 
     const videosResponse = await fetch(videosUrl);
     const videosData = await videosResponse.json();
-    console.log("Videos data:", videosData);
+
+    const streams: YoutubeStreamData[] = [];
 
     if (videosData.items) {
       videosData.items.forEach((item: any) => {
         const liveDetails = item.liveStreamingDetails;
-        
+
         // liveStreamingDetailsが存在しない場合は動画ではないと判断
         if (!liveDetails) {
           return;
         }
 
         let status: "live" | "upcoming" | "ended" = "ended";
-        let dateTime = item.snippet.publishedAt; // デフォルトは公開日時
+        let dateTime: string | undefined;
 
         if (liveDetails.actualEndTime) {
           status = "ended";
@@ -79,33 +93,35 @@ export async function fetchLiveAndUpcomingStreams(
         } else if (liveDetails.scheduledStartTime) {
           status = "upcoming";
           dateTime = liveDetails.scheduledStartTime;
+        } else {
+          return; // 配信の詳細が不明な場合はスキップ
         }
 
         streams.push({
           videoId: item.id,
           thumbnailUrl:
-            item.snippet.thumbnails.high?.url || // high品質を優先
-            item.snippet.thumbnails.medium?.url || // medium品質を次に
-            item.snippet.thumbnails.default?.url || // default品質を最後に
+            item.snippet.thumbnails.high?.url ||
+            item.snippet.thumbnails.medium?.url ||
+            item.snippet.thumbnails.default?.url ||
             "",
           title: item.snippet.title,
           channelName: item.snippet.channelTitle,
-          dateTime: new Date(dateTime).toLocaleDateString("ja-JP"),
+          dateTime: dateTime ? new Date(dateTime).toLocaleString("ja-JP") : "",
           status: status,
           streamUrl: `https://www.youtube.com/watch?v=${item.id}`,
         });
       });
     }
+    // 取得した配信を日時でソート(降順)
+    streams.sort(
+      (a, b) => new Date(b.dateTime).getTime() - new Date(a.dateTime).getTime()
+    );
+
+    return streams;
   } catch (error) {
     console.error("ライブ配信の取得に失敗しました:", error);
+    return [];
   }
-
-  // 取得した配信を日時でソート(降順)
-  streams.sort(
-    (a, b) => new Date(b.dateTime).getTime() - new Date(a.dateTime).getTime()
-  );
-
-  return streams;
 }
 
 /**
@@ -117,7 +133,7 @@ export async function fetchLiveAndUpcomingStreams(
 
 export async function fetchChannelDetails(
   channelId: string,
-  apiKey: string,
+  apiKey: string
 ): Promise<YoutubeChannelData | null> {
   if (!apiKey) {
     console.error("APIキーが設定されていません");
@@ -135,7 +151,7 @@ export async function fetchChannelDetails(
       return {
         channelId: item.id,
         channelName: item.snippet.title,
-        thumbnailUrl: item.snippet.thumbnails.default?.url || '',
+        thumbnailUrl: item.snippet.thumbnails.default?.url || "",
       };
     } else {
       // チャンネルが見つからない場合
