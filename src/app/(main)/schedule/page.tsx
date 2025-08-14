@@ -11,7 +11,7 @@ import { db, auth } from "@/lib/firebase";
 import { YoutubeChannelData } from "@/lib/api/youtube";
 
 export default function SchedulePage() {
-  const [activeTab, setActiveTab] = useState("直近");
+  const [activeTab, setActiveTab] = useState("アーカイブ");
   const [streams, setStreams] = useState<YoutubeStreamData[]>([]);
   const [loadingStreams, setLoadingStreams] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -114,14 +114,11 @@ export default function SchedulePage() {
 
   // activeTabに応じて表示する配信データをフィルタリング
   const filteredStreams = streams.filter((stream) => {
-    if (activeTab === "直近") {
-      // ライブと今後の配信を全て表示
-      // 現在のAPI呼び出しでは、正確な「終了済み」のライブ配信の判別困難
-      // より厳密な「直近」の実装には、API呼び出しの工夫やバックエンドでのデータ管理が必要
-      return true;
-    } else if (activeTab === "現在配信中") {
+    if (activeTab === "アーカイブ") {
+      return stream.status === "ended"; // アーカイブされた配信
+    } else if (activeTab === "配信中") {
       return stream.status === "live"; // 現在配信中の配信
-    } else if (activeTab === "今後") {
+    } else if (activeTab === "配信予定") {
       return stream.status === "upcoming"; // 今後の配信
     }
     return false; // その他のタブは表示しない
@@ -134,7 +131,7 @@ export default function SchedulePage() {
       <h1 className="text-4xl font-bold text-center mb-8">スケジュール</h1>
       {/* タブ切り替えボタン */}
       <div className="bg-white p-4 rounded-lg shadow-md mb-6 flex justify-center gap-4">
-        {["直近", "現在配信中", "今後"].map((label, index) => (
+        {["アーカイブ", "配信中", "配信予定"].map((label, index) => (
           <ToggleButton
             key={label}
             label={label}
