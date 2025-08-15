@@ -9,10 +9,8 @@ import { db, auth } from "@/lib/firebase";
 import { fetchChannelDetails, YoutubeChannelData } from "@/lib/api/youtube";
 import AddChannelForm from "@/components/channels/AddChannelForm";
 import ChannelList from "@/components/channels/ChannelList";
-/*
 import AlertMessage from "@/components/ui/AlertMessage";
 import LoadingIndicator from "@/components/ui/LoadingIndicator";
-*/
 
 export default function ChannelsPage() {
   const [channels, setChannels] = useState<YoutubeChannelData[]>([]);
@@ -203,7 +201,6 @@ export default function ChannelsPage() {
   return (
     <div className="min-h-screen bg-gray-100 p-8">
       <h1 className="text-4xl font-bold text-center mb-8">チャンネル管理</h1>
-      {/*
       <LoadingIndicator loading={loading} user={user} />
       <AlertMessage message={errorMessage} type="error" />
       <AlertMessage message={successMessage} type="success" />
@@ -214,7 +211,6 @@ export default function ChannelsPage() {
           <ChannelList channels={channels} onDeleteChannel={handleDeleteChannel} />
         </>
       )}
-      */}
     </div>
   );
 }
