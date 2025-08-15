@@ -7,10 +7,15 @@ import { doc, setDoc, deleteDoc, collection, query, getDocs } from "firebase/fir
 import { onAuthStateChanged, User } from "firebase/auth";
 import { db, auth } from "@/lib/firebase";
 import { fetchChannelDetails, YoutubeChannelData } from "@/lib/api/youtube";
+import AddChannelForm from "@/components/channels/AddChannelForm";
+/*
+import ChannelList from "@/components/channels/ChannelList";
+import AlertMessage from "@/components/ui/AlertMessage";
+import LoadingIndicator from "@/components/ui/LoadingIndicator";
+*/
 
 export default function ChannelsPage() {
   const [channels, setChannels] = useState<YoutubeChannelData[]>([]);
-  const [newChannelId, setNewChannelId] = useState<string>("");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [addingChannel, setAddingChannel] = useState(false);
@@ -82,7 +87,7 @@ export default function ChannelsPage() {
   };
 
   // チャンネルIDを追加する関数
-  const handleAddChannel = async () => {
+  const handleAddChannel = async (newChannelId: string, setNewChannelId: (id: string) => void) => {
     setErrorMessage(null);
     setSuccessMessage(null);
 
@@ -198,109 +203,18 @@ export default function ChannelsPage() {
   return (
     <div className="min-h-screen bg-gray-100 p-8">
       <h1 className="text-4xl font-bold text-center mb-8">チャンネル管理</h1>
-
-      {/* ロード中表示 */}
-      {loading && (
-        <div className="text-center text-xl text-gray-700 mb-4">
-          {user ? "チャンネルを読み込み中..." : "ログイン状態を確認中..."}
-        </div>
-      )}
-
-      {/* ユーザーがログインしていない場合のメッセージ */}
-      {!user && !loading && (
-        <div className="text-center text-xl text-red-600">
-          チャンネル管理機能を利用するにはログインが必要です。
-          <p className="mt-2"><a href="/login" className="text-indigo-600 hover:underline">ログインページへ</a></p>
-        </div>
-      )}
-
-      {/* メッセージ表示エリア */}
-      {errorMessage && (
-        <p className="text-center text-red-500 text-sm mt-4">{errorMessage}</p>
-      )}
-      {successMessage && (
-        <p className="text-center text-green-600 text-sm mt-4">
-          {successMessage}
-        </p>
-      )}
-
-      {/* ログインしている場合のみ表示 */}
+      {/*
+      <LoadingIndicator loading={loading} user={user} />
+      <AlertMessage message={errorMessage} type="error" />
+      <AlertMessage message={successMessage} type="success" />
+      {!user && !loading && <p className="text-center text-xl text-red-600">チャンネル管理機能を利用するにはログインが必要です。<p className="mt-2"><a href="/login" className="text-indigo-600 hover:underline">ログインページへ</a></p></p>}
       {user && !loading && (
         <>
-          {/* チャンネルID入力フォーム */}
-          <div className="bg-white p-6 rounded-lg shadow-md max-w-xl mx-auto mb-8">
-            <h2 className="text-2xl font-semibold mb-4 text-center">
-              チャンネルを追加
-            </h2>
-          <div className="flex flex-col sm:flex-row gap-4">
-            <input
-              type="text"
-              value={newChannelId}
-              onChange={(e) => setNewChannelId(e.target.value)}
-              placeholder="チャンネルIDを入力"
-              className="flex-grow px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-              disabled={addingChannel} // 追加中は入力不可
-            />
-            <button
-              onClick={handleAddChannel}
-              className="px-6 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors duration-200"
-              disabled={addingChannel} // 追加中はボタン無効化
-            >
-              {addingChannel ? "追加中..." : "追加"} {/* ローディング表示 */}
-            </button>
-          </div>
-          <p className="text-sm text-gray-500 mt-3 text-center">
-            ※チャンネルIDはYouTubeチャンネルのURLから取得できます。
-            (例:youtube.com/channel/<span className="underline decoration-red-500">UC...</span>)
-          </p>
-        </div>
-
-        {/* 登録済みチャンネルIDのリスト */}
-        <div className="bg-white p-6 rounded-lg shadow-md max-w-xl mx-auto">
-          <h2 className="text-2xl font-semibold mb-4 text-center">
-            登録済みチャンネル
-          </h2>
-          {channels.length === 0 ? (
-            <p className="text-center text-gray-600">
-              まだ登録されたチャンネルはありません。
-            </p>
-          ) : (
-            <ul className="space-y-3">
-              {channels.map((channel) => (
-                <li
-                  key={channel.channelId}
-                  className="flex justify-between items-center bg-gray-50 p-3 rounded-md border border-gray-200"
-                >
-                  {/* チャンネル名とアイコンの表示 */}
-                  <div className="flex items-center gap-3">
-                    {channel.thumbnailUrl && (
-                      <img
-                        src={channel.thumbnailUrl}
-                        alt={channel.channelName}
-                        className="w-8 h-8 rounded-full"
-                      />
-                    )}
-                    <span className="font-medium text-gray-800 break-all">
-                      {channel.channelName}
-                    </span>
-                    {/* チャンネルIDの表示 */}
-                    <span className="text-gray-500 text-xs hidden sm:inline-block">
-                      ({channel.channelId})
-                    </span>
-                  </div>
-                  <button
-                    onClick={() => handleDeleteChannel(channel.channelId)}
-                    className="ml-4 px-3 py-1 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors duration-200 text-sm"
-                  >
-                    削除
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
+          <AddChannelForm onAddChannel={handleAddChannel} addingChannel={addingChannel} />
+          <ChannelList channels={channels} onDeleteChannel={handleDeleteChannel} />
         </>
       )}
-      </div>
+      */}
+    </div>
   );
 }
