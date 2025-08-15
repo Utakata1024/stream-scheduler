@@ -1,6 +1,5 @@
 "use client";
 
-import { on } from "events";
 import React, { useState } from "react";
 
 interface AddChannelFormProps {
@@ -20,7 +19,6 @@ export default function AddChannelForm({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     await onAddChannel(newChannelId, setNewChannelId);
-    setNewChannelId("");
   };
 
   return (
