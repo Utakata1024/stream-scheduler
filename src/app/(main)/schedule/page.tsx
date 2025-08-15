@@ -96,10 +96,7 @@ export default function SchedulePage() {
           }
         });
 
-        // 日時でソート(降順)
-        allFetchedStreams.sort((a, b) => new Date(b.dateTime).getTime() - new Date(a.dateTime).getTime());
-
-        setStreams(allFetchedStreams); // 取得した全データをStateに
+        setStreams(allFetchedStreams);
 
       } catch (err) {
         console.error("登録チャンネルの配信取得に失敗しました", err);
@@ -123,6 +120,19 @@ export default function SchedulePage() {
     }
     return false; // その他のタブは表示しない
   });
+
+  // 各タブのソート順を変更
+  if (activeTab === "アーカイブ") {
+    // アーカイブは最新順
+    filteredStreams.sort(
+      (a, b) => new Date(b.dateTime).getTime() - new Date(a.dateTime).getTime()
+    );
+  } else {
+    // 配信中と配信予定は現在時刻に近い順
+    filteredStreams.sort(
+      (a, b) => new Date(a.dateTime).getTime() - new Date(b.dateTime).getTime()
+    );
+  }
 
   const isLoading = loadingUser || loadingStreams;
 
