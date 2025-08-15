@@ -10,6 +10,7 @@ export default function Header() {
   const pathname = usePathname();
   const router = useRouter();
   const isLoginPage = pathname === "/login";
+  const isSignUpPage = pathname === "/signup";
 
   const [user, setUser] = useState<User | null>(null);
   const [loadingAuth, setLoadingAuth] = useState(true);
@@ -33,20 +34,21 @@ export default function Header() {
     }
   };
 
-  // ログインページの場合はヘッダーを表示しない
-  if (loadingAuth) {
+  // ログイン・新規登録ページはヘッダーを表示しない
+  if (loadingAuth || isLoginPage || isSignUpPage) {
     return null;
   }
 
   return (
     <header className="bg-indigo-700 text-white p-4 shadow-md">
       <div className="container mx-auto flex justify-between items-center">
+
         {/* アプリのタイトル/ロゴ */}
         <Link href="/" className="text-2xl font-bold hover:text-indigo-200 transition-colors duration-200">
           Stream Scheduler
         </Link>
 
-        {!isLoginPage && user ? (
+        {user ? (
           <nav>
             <ul className="flex space-x-6">
               <li>
