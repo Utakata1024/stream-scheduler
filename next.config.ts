@@ -8,6 +8,7 @@ const nextConfig: NextConfig = {
       'placehold.co', 
       'i.ytimg.com',  // YouTube API連携用
       'yt3.ggpht.com', // YouTubeチャンネルアイコン用
+      'static-cdn.jtvnw.net', // Twitch API連携用
       // 他のドメインがあればここに追加
     ],
   },
