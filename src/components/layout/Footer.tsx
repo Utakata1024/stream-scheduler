@@ -15,8 +15,6 @@ export default function Footer() {
             &copy; {currentYear} Stream Scheduler. All rights reserved.
           </p>
         </div>
-        {/* 中間 */}
-        <div className="text-center md:text-left">仮。あとで更新予定</div>
         {/* 右側 */}
         <div className="text-center md:text-left">
           <h3 className="text-lg font-semibold mb-3">情報</h3>
@@ -26,7 +24,23 @@ export default function Footer() {
                 href="#"
                 className="hover:text-gray-300 transition-colors duration-200"
               >
-                aaa
+                利用規約
+              </Link>
+            </li>
+            <li>
+              <Link
+                href="#"
+                className="hover:text-gray-300 transition-colors duration-200"
+              >
+                プライバシーポリシー
+              </Link>
+            </li>
+            <li>
+              <Link
+                href="#"
+                className="hover:text-gray-300 transition-colors duration-200"
+              >
+                お問い合わせ
               </Link>
             </li>
           </ul>
