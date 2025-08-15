@@ -1,12 +1,11 @@
-// チャンネル管理ページ
-
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { doc, setDoc, deleteDoc, collection, query, getDocs } from "firebase/firestore";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { db, auth } from "@/lib/firebase";
 import { fetchChannelDetails, YoutubeChannelData } from "@/lib/api/youtube";
+import { fetchUserByLogin, getAppAccessToken } from "@/lib/api/twitch";
 import AddChannelForm from "@/components/channels/AddChannelForm";
 import ChannelList from "@/components/channels/ChannelList";
 import AlertMessage from "@/components/ui/AlertMessage";
@@ -20,30 +19,7 @@ export default function ChannelsPage() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // ユーザーのログイン状態を監視してFirestoreからデータを読み込むロジック
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-      setUser(currentUser); // ユーザー情報を更新
-      if (currentUser) {
-        // ログイン時→データを読み込む
-        if (db) {
-          await fetchAndLoadChannels(currentUser.uid);
-        } else {
-          console.error("Firestoreが初期化されていません");
-          setErrorMessage("データベースが利用できません");
-          setLoading(false);
-        }
-      } else {
-        // 非ログイン→チャンネルリストを空に
-        setChannels([]);
-        setLoading(false);
-      }
-    });
-    return () => unsubscribe();
-  }, []);
-
-  // Firestoreからチャンネルデータを取得する関数
-  const fetchAndLoadChannels = async (uid: string) => {
+  const fetchAndLoadChannels = useCallback(async (uid: string) => {
     setLoading(true);
     setErrorMessage(null);
     setSuccessMessage(null);
@@ -55,13 +31,11 @@ export default function ChannelsPage() {
       return;
     }
     if (!db) {
-      console.error("Firestoreが初期化されていません");
       setErrorMessage("データベースを利用できません");
       setLoading(false);
       return;
     }
 
-    // ユーザーのチャンネル情報取得・リスト更新
     const userChannelsRef = collection(db, `users/${uid}/channels`);
     const q = query(userChannelsRef);
     const fetchedChannelData: YoutubeChannelData[] = [];
@@ -75,125 +49,142 @@ export default function ChannelsPage() {
           thumbnailUrl: data.thumbnailUrl || "",
         });
       });
-      setChannels(fetchedChannelData); // チャンネルリストを更新
+      setChannels(fetchedChannelData);
     } catch (error) {
       console.error("チャンネルの取得に失敗しました", error);
       setErrorMessage("チャンネルの取得に失敗しました");
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  // チャンネルIDを追加する関数
-  const handleAddChannel = async (newChannelId: string, setNewChannelId: (id: string) => void) => {
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+      setUser(currentUser);
+      if (currentUser) {
+        await fetchAndLoadChannels(currentUser.uid);
+      } else {
+        setChannels([]);
+        setLoading(false);
+      }
+    });
+    return () => unsubscribe();
+  }, [fetchAndLoadChannels]);
+
+  const handleAddChannel = async (newChannelInput: string, resetInput: (input: string) => void) => {
     setErrorMessage(null);
     setSuccessMessage(null);
 
-    if (newChannelId.trim() === "") {
-      setErrorMessage("チャンネルIDを入力してください。");
+    if (newChannelInput.trim() === "") {
+      setErrorMessage("チャンネル名またはIDを入力してください。");
       return;
     }
     if (!user) {
       setErrorMessage("ログインしていません。");
       return;
     }
-    // 登録済みかチェック
-    const trimmedChannelId = newChannelId.trim();
-    if (channels.some((c) => c.channelId === trimmedChannelId)) {
-      setErrorMessage("このチャンネルIDは既に登録されています。");
-      setNewChannelId("");
-      return;
-    }
 
-    setAddingChannel(true); // チャンネル追加中のローディング開始
+    setAddingChannel(true);
 
-    const YOUTUBE_API_KEY = process.env.NEXT_PUBLIC_YOUTUBE_API_KEY;
-    if (!YOUTUBE_API_KEY) {
-      setErrorMessage("YouTube APIキーが設定されていません");
-      setAddingChannel(false);
-      return;
-    }
-    if (!db) {
-      console.error("Firestoreが初期化されていません");
-      setErrorMessage("データベースを利用できません");
-      setAddingChannel(false);
-      return;
-    }
+    const trimmedInput = newChannelInput.trim();
+    let channelDetails = null;
+    let channelId = '';
+    let platform = '';
 
     try {
-      // YouTubeAPIで詳細情報取得
-      const channelDetails = await fetchChannelDetails(
-        trimmedChannelId,
-        YOUTUBE_API_KEY
-      );
+        const YOUTUBE_API_KEY = process.env.NEXT_PUBLIC_YOUTUBE_API_KEY;
+        const TWITCH_CLIENT_ID = process.env.NEXT_PUBLIC_TWITCH_CLIENT_ID;
+        const TWITCH_CLIENT_SECRET = process.env.NEXT_PUBLIC_TWITCH_CLIENT_SECRET;
 
-      if (!channelDetails) {
-        setErrorMessage("指定されたチャンネルIDが見つかりません");
-        setNewChannelId(""); // 入力欄クリア
-        return;
-      }
+        // YouTubeチャンネルID（"UC..."）の形式で入力された場合
+        if (trimmedInput.startsWith('UC')) {
+            platform = 'youtube';
+            channelId = trimmedInput;
+            if (!YOUTUBE_API_KEY) {
+                throw new Error("YouTube APIキーが設定されていません");
+            }
+            channelDetails = await fetchChannelDetails(channelId, YOUTUBE_API_KEY);
+        } else {
+            // それ以外はTwitchチャンネル名と仮定
+            platform = 'twitch';
+            if (!TWITCH_CLIENT_ID || !TWITCH_CLIENT_SECRET) {
+                throw new Error("Twitch APIキーが設定されていません");
+            }
+            const twitchAccessToken = await getAppAccessToken(TWITCH_CLIENT_ID, TWITCH_CLIENT_SECRET);
+            if (!twitchAccessToken) {
+                throw new Error("Twitch認証トークンの取得に失敗しました。");
+            }
+            const twitchUser = await fetchUserByLogin(trimmedInput, twitchAccessToken, TWITCH_CLIENT_ID);
+            if (twitchUser) {
+                channelId = twitchUser.id;
+                channelDetails = {
+                    channelId: twitchUser.id,
+                    channelName: twitchUser.display_name,
+                    thumbnailUrl: twitchUser.profile_image_url
+                };
+            }
+        }
 
-      // Firestoreにチャンネル情報を保存
-      const channelDocRef = doc(
-        db,
-        `users/${user.uid}/channels`,
-        channelDetails.channelId
-      );
-      await setDoc(channelDocRef, {
-        channelName: channelDetails.channelName,
-        thumbnailUrl: channelDetails.thumbnailUrl,
-        addedAt: new Date(), // 追加日時を保存
-      });
+        if (!channelDetails) {
+            setErrorMessage("指定されたチャンネルが見つかりません。");
+            resetInput("");
+            return;
+        }
 
-      // 新しいチャンネルを追加
-      setChannels([...channels, channelDetails]);
-      setNewChannelId("");
-      setSuccessMessage("チャンネルが追加されました");
-    } catch (error) {
-      console.error("チャンネルの追加に失敗しました", error);
-      setErrorMessage("チャンネルの追加に失敗しました");
+        if (channels.some((c) => c.channelId === channelId)) {
+            setErrorMessage("このチャンネルは既に登録されています。");
+            resetInput("");
+            return;
+        }
+
+        if (!db) {
+            throw new Error("データベースが利用できません");
+        }
+
+        const channelDocRef = doc(db, `users/${user.uid}/channels`, channelId);
+        await setDoc(channelDocRef, {
+            channelName: channelDetails.channelName,
+            thumbnailUrl: channelDetails.thumbnailUrl,
+            platform: platform,
+            addedAt: new Date(),
+        });
+
+        const newChannel = {
+            channelId: channelDetails.channelId,
+            channelName: channelDetails.channelName,
+            thumbnailUrl: channelDetails.thumbnailUrl
+        };
+        setChannels([...channels, newChannel]);
+        resetInput("");
+        setSuccessMessage("チャンネルが追加されました");
+    } catch (error: any) {
+        console.error("チャンネルの追加に失敗しました", error);
+        setErrorMessage(error.message || "チャンネルの追加に失敗しました");
     } finally {
-      setAddingChannel(false); // ローディング終了
+        setAddingChannel(false);
     }
   };
 
-  // チャンネルIDを削除する関数
   const handleDeleteChannel = async (channelIdToDelete: string) => {
     setErrorMessage(null);
     setSuccessMessage(null);
-
-    if (!user) {
+    if (!user || !db) {
       setErrorMessage("チャンネルを削除するにはログインが必要です。");
       return;
     }
-    if (!db) {
-      console.error("Firestore DB is not initialized for deleting.");
-      setErrorMessage("データベースが利用できません。");
-      return;
-    }
 
-    // 削除の確認
     if (confirm(`チャンネルID "${channelIdToDelete}" を削除しますか？`)) {
-      setLoading(true); // 削除中のローディング開始
+      setLoading(true);
       try {
-        // Firestoreからドキュメントを削除
-        const channelDocRef = doc(
-          db,
-          `users/${user.uid}/channels`,
-          channelIdToDelete
-        );
+        const channelDocRef = doc(db, `users/${user.uid}/channels`, channelIdToDelete);
         await deleteDoc(channelDocRef);
-
-        // 削除対象を除いて新しくリスト作成
-        setChannels(
-          channels.filter((channel) => channel.channelId !== channelIdToDelete)
-        );
+        setChannels(channels.filter((channel) => channel.channelId !== channelIdToDelete));
         setSuccessMessage("チャンネルが削除されました!");
       } catch (error) {
         console.error("チャンネルの削除に失敗しました", error);
         setErrorMessage("チャンネルの削除に失敗しました");
       } finally {
-        setLoading(false); // ローディング終了
+        setLoading(false);
       }
     }
   };
