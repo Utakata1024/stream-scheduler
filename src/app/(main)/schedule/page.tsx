@@ -4,14 +4,14 @@
 import { useEffect, useState } from "react";
 import ToggleButton from "@/components/ui/ToggleButton";
 import StreamCard from "@/components/schedule/StreamCard";
-import { fetchLiveAndUpcomingStreams, YoutubeStreamData } from "@/lib/api/youtube";
+import { fetchStreams, YoutubeStreamData } from "@/lib/api/youtube";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { collection, query, getDocs, serverTimestamp } from "firebase/firestore";
 import { db, auth } from "@/lib/firebase";
 import { YoutubeChannelData } from "@/lib/api/youtube";
 
 export default function SchedulePage() {
-  const [activeTab, setActiveTab] = useState("直近");
+  const [activeTab, setActiveTab] = useState("アーカイブ");
   const [streams, setStreams] = useState<YoutubeStreamData[]>([]);
   const [loadingStreams, setLoadingStreams] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -80,7 +80,7 @@ export default function SchedulePage() {
         // 各登録チャンネルの配信情報をYouTube APIから取得
         const fetchPromises = registerChannelIds.map(async (channelId) => {
           try {
-            return await fetchLiveAndUpcomingStreams(channelId, YOUTUBE_API_KEY);
+            return await fetchStreams(channelId, YOUTUBE_API_KEY);
           } catch (apiError) {
             console.error(`チャンネル ${channelId} の配信取得に失敗しました:`, apiError);
             return [];
@@ -96,10 +96,7 @@ export default function SchedulePage() {
           }
         });
 
-        // 日時でソート(降順)
-        allFetchedStreams.sort((a, b) => new Date(b.dateTime).getTime() - new Date(a.dateTime).getTime());
-
-        setStreams(allFetchedStreams); // 取得した全データをStateに
+        setStreams(allFetchedStreams);
 
       } catch (err) {
         console.error("登録チャンネルの配信取得に失敗しました", err);
@@ -114,18 +111,28 @@ export default function SchedulePage() {
 
   // activeTabに応じて表示する配信データをフィルタリング
   const filteredStreams = streams.filter((stream) => {
-    if (activeTab === "直近") {
-      // ライブと今後の配信を全て表示
-      // 現在のAPI呼び出しでは、正確な「終了済み」のライブ配信の判別困難
-      // より厳密な「直近」の実装には、API呼び出しの工夫やバックエンドでのデータ管理が必要
-      return true;
-    } else if (activeTab === "現在配信中") {
+    if (activeTab === "アーカイブ") {
+      return stream.status === "ended"; // アーカイブされた配信
+    } else if (activeTab === "配信中") {
       return stream.status === "live"; // 現在配信中の配信
-    } else if (activeTab === "今後") {
+    } else if (activeTab === "配信予定") {
       return stream.status === "upcoming"; // 今後の配信
     }
     return false; // その他のタブは表示しない
   });
+
+  // 各タブのソート順を変更
+  if (activeTab === "アーカイブ") {
+    // アーカイブは最新順
+    filteredStreams.sort(
+      (a, b) => new Date(b.dateTime).getTime() - new Date(a.dateTime).getTime()
+    );
+  } else {
+    // 配信中と配信予定は現在時刻に近い順
+    filteredStreams.sort(
+      (a, b) => new Date(a.dateTime).getTime() - new Date(b.dateTime).getTime()
+    );
+  }
 
   const isLoading = loadingUser || loadingStreams;
 
@@ -134,7 +141,7 @@ export default function SchedulePage() {
       <h1 className="text-4xl font-bold text-center mb-8">スケジュール</h1>
       {/* タブ切り替えボタン */}
       <div className="bg-white p-4 rounded-lg shadow-md mb-6 flex justify-center gap-4">
-        {["直近", "現在配信中", "今後"].map((label, index) => (
+        {["アーカイブ", "配信中", "配信予定"].map((label, index) => (
           <ToggleButton
             key={label}
             label={label}

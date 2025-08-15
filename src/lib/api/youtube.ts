@@ -8,7 +8,7 @@ export interface YoutubeStreamData {
   dateTime: string;
   status: "live" | "upcoming" | "ended";
   streamUrl: string;
-  videoId: string; // YouTube APIから取得する動画ID
+  videoId: string;
 }
 
 export interface YoutubeChannelData {
@@ -17,14 +17,7 @@ export interface YoutubeChannelData {
   thumbnailUrl: string;
 }
 
-/**
- * 指定されたチャンネルのライブ配信と今後の配信（プレミア公開など）を取得する関数
- * @param channelId 取得したいYouTubeチャンネルのID
- * @param apiKey YouTube Data APIキー
- * @returns ライブ配信と今後の配信のリスト
- */
-
-export async function fetchLiveAndUpcomingStreams(
+export async function fetchStreams(
   channelId: string,
   apiKey: string
 ): Promise<YoutubeStreamData[]> {
@@ -33,72 +26,77 @@ export async function fetchLiveAndUpcomingStreams(
     return [];
   }
 
-  const streams: YoutubeStreamData[] = [];
-
   try {
-    // ライブ配信の検索
-    const requestUrl = `${YOUTUBE_API_BASE_URL}/search?part=snippet&channelId=${channelId}&type=video&order=date&maxResults=20&key=${apiKey}`;
-    console.log("Fetching YouTube API from URL:", requestUrl);
+    // チャンネル内の全ての動画IDを検索し、ライブ配信と通常の動画を区別なく取得
+    const searchUrl = `${YOUTUBE_API_BASE_URL}/search?part=id,snippet&channelId=${channelId}&type=video&order=date&maxResults=50&key=${apiKey}`;
+    const searchResponse = await fetch(searchUrl);
+    const searchData = await searchResponse.json();
 
-    const response = await fetch(requestUrl);
-    const liveData = await response.json();
+    const videoIds = (searchData && searchData.items)
+      ? searchData.items.map((item: any) => item.id.videoId).join(",")
+      : "";
 
-    // ここでレスポンス全体をコンソールに出力して確認
-    console.log("YouTube Search API Response:", liveData);
+    if (!videoIds) {
+      console.log("動画が見つかりませんでした。");
+      return [];
+    }
 
-    if (liveData.items) {
-      // 取得した各動画アイテムに対してループ処理
-      liveData.items.forEach((item: any) => {
-        // liveBroadCastContentが'upcoming'ならば今後の配信
-        const liveBroadCastContent = item.snippet.liveBroadcastContent;
-        let status: "live" | "upcoming" | "ended" = "ended"; // デフォルトは終了済み
+    // 取得した動画IDを使って、詳細情報をvideos APIから取得
+    const videosUrl = `${YOUTUBE_API_BASE_URL}/videos?part=snippet,liveStreamingDetails&id=${videoIds}&key=${apiKey}`;
+    const videosResponse = await fetch(videosUrl);
+    const videosData = await videosResponse.json();
 
-        if (liveBroadCastContent === "live") {
-          status = "live";
-        } else if (liveBroadCastContent === "upcoming") {
-          status = "upcoming";
-        } else if (liveBroadCastContent === "none") {
-          status = "ended"; // 予定がない場合は終了済みとする
+    const streams: YoutubeStreamData[] = [];
+
+    if (videosData.items) {
+      videosData.items.forEach((item: any) => {
+        const liveDetails = item.liveStreamingDetails;
+
+        // liveStreamingDetailsが存在しない場合はライブ配信ではないため、この要件ではスキップ
+        if (!liveDetails) {
+          return;
         }
 
-        // 各動画itemから必要な情報を抽出してstreamsに追加
+        let status: "live" | "upcoming" | "ended" = "ended";
+        let dateTime: string = item.snippet.publishedAt;
+
+        if (liveDetails.actualEndTime) {
+          status = "ended";
+          dateTime = liveDetails.actualEndTime;
+        } else if (liveDetails.actualStartTime) {
+          status = "live";
+          dateTime = liveDetails.actualStartTime;
+        } else if (liveDetails.scheduledStartTime) {
+          status = "upcoming";
+          dateTime = liveDetails.scheduledStartTime;
+        }
+
         streams.push({
-          videoId: item.id.videoId,
+          videoId: item.id,
           thumbnailUrl:
-            item.snippet.thumbnails.high?.url || // high品質を優先
-            item.snippet.thumbnails.medium?.url || // medium品質を次に
-            item.snippet.thumbnails.default?.url || // default品質を最後に
+            item.snippet.thumbnails.high?.url ||
+            item.snippet.thumbnails.medium?.url ||
+            item.snippet.thumbnails.default?.url ||
             "",
           title: item.snippet.title,
           channelName: item.snippet.channelTitle,
-          // 予定開始時刻は liveStreamingDetails にあることが多いが、search APIのsnippetにはpublishedAtしかない場合も
-          // より正確な時刻が必要なら videos.list API を追加で叩く必要があるが、今回はpublishedAtで簡略化
-          dateTime: new Date(item.snippet.publishedAt).toLocaleDateString(
-            "ja-JP"
-          ), // 公開日時を日本語で
+          dateTime: dateTime,
           status: status,
-          streamUrl: `https://www.youtube.com/watch?v=${item.id.videoId}`,
+          streamUrl: `https://www.youtube.com/watch?v=${item.id}`,
         });
       });
     }
+
+    streams.sort(
+      (a, b) => new Date(b.dateTime).getTime() - new Date(a.dateTime).getTime()
+    );
+
+    return streams;
   } catch (error) {
-    console.error("ライブ配信の取得に失敗しました:", error);
+    console.error("動画の取得に失敗しました:", error);
+    return [];
   }
-
-  // 取得した配信を日時でソート(降順)
-  streams.sort(
-    (a, b) => new Date(b.dateTime).getTime() - new Date(a.dateTime).getTime()
-  );
-
-  return streams;
 }
-
-/**
- * 指定されたチャンネルの情報を取得する関数
- * @param channelId 取得したいYouTubeチャンネルのID
- * @param apiKey YouTube Data APIキー
- * @returns チャンネル情報
- */
 
 export async function fetchChannelDetails(
   channelId: string,
@@ -116,14 +114,13 @@ export async function fetchChannelDetails(
     const data = await response.json();
 
     if (data.items && data.items.length > 0) {
-      const item = data.items[0]; // 最初のアイテムが該当チャンネルの情報
+      const item = data.items[0];
       return {
         channelId: item.id,
         channelName: item.snippet.title,
         thumbnailUrl: item.snippet.thumbnails.default?.url || '',
       };
     } else {
-      // チャンネルが見つからない場合
       return null;
     }
   } catch (error) {
