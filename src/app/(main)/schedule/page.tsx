@@ -4,7 +4,7 @@
 import { useEffect, useState } from "react";
 import ToggleButton from "@/components/ui/ToggleButton";
 import StreamCard from "@/components/schedule/StreamCard";
-import { fetchLiveAndUpcomingStreams, YoutubeStreamData } from "@/lib/api/youtube";
+import { fetchStreams, YoutubeStreamData } from "@/lib/api/youtube";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { collection, query, getDocs, serverTimestamp } from "firebase/firestore";
 import { db, auth } from "@/lib/firebase";
@@ -80,7 +80,7 @@ export default function SchedulePage() {
         // 各登録チャンネルの配信情報をYouTube APIから取得
         const fetchPromises = registerChannelIds.map(async (channelId) => {
           try {
-            return await fetchLiveAndUpcomingStreams(channelId, YOUTUBE_API_KEY);
+            return await fetchStreams(channelId, YOUTUBE_API_KEY);
           } catch (apiError) {
             console.error(`チャンネル ${channelId} の配信取得に失敗しました:`, apiError);
             return [];

@@ -17,7 +17,7 @@ export interface YoutubeChannelData {
   thumbnailUrl: string;
 }
 
-export async function fetchLiveAndUpcomingStreams(
+export async function fetchStreams(
   channelId: string,
   apiKey: string
 ): Promise<YoutubeStreamData[]> {
@@ -80,7 +80,7 @@ export async function fetchLiveAndUpcomingStreams(
             "",
           title: item.snippet.title,
           channelName: item.snippet.channelTitle,
-          dateTime: dateTime, // ソートのためにISO 8601形式のまま保持
+          dateTime: dateTime,
           status: status,
           streamUrl: `https://www.youtube.com/watch?v=${item.id}`,
         });
