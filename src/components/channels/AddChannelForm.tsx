@@ -1,5 +1,6 @@
 "use client";
 
+import { on } from "events";
 import React, { useState } from "react";
 
 interface AddChannelFormProps {
@@ -19,6 +20,7 @@ export default function AddChannelForm({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     await onAddChannel(newChannelId, setNewChannelId);
+    setNewChannelId("");
   };
 
   return (
@@ -28,12 +30,14 @@ export default function AddChannelForm({
       </h2>
       <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-4">
         <input
+          id="new-channel-id"
           type="text"
           value={newChannelId}
           onChange={(e) => setNewChannelId(e.target.value)}
           placeholder="YouTubeチャンネルID"
           className="flex-grow px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
           disabled={addingChannel}
+          required
         />
         <button
           type="submit"
@@ -45,7 +49,8 @@ export default function AddChannelForm({
       </form>
       <p className="text-sm text-gray-500 mt-3 text-center">
         ※チャンネルIDはYouTubeチャンネルのURLから取得できます。
-        (例:youtube.com/channel/<span className="underline decoration-red-500">UC...</span>)
+        (例:youtube.com/channel/
+        <span className="underline decoration-red-500">UC...</span>)
       </p>
     </div>
   );
