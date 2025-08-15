@@ -8,8 +8,8 @@ import { onAuthStateChanged, User } from "firebase/auth";
 import { db, auth } from "@/lib/firebase";
 import { fetchChannelDetails, YoutubeChannelData } from "@/lib/api/youtube";
 import AddChannelForm from "@/components/channels/AddChannelForm";
-/*
 import ChannelList from "@/components/channels/ChannelList";
+/*
 import AlertMessage from "@/components/ui/AlertMessage";
 import LoadingIndicator from "@/components/ui/LoadingIndicator";
 */
