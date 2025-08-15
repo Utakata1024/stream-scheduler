@@ -17,7 +17,7 @@ export interface YoutubeChannelData {
   thumbnailUrl: string;
 }
 
-export async function fetchStreams(
+export async function fetchYoutubeStreams(
   channelId: string,
   apiKey: string
 ): Promise<YoutubeStreamData[]> {
