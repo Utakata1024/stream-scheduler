@@ -135,8 +135,6 @@ export default function SchedulePage() {
           }
         });
 
-        allFetchedStreams.sort((a, b) => new Date(b.dateTime).getTime() - new Date(a.dateTime).getTime());
-
         setStreams(allFetchedStreams);
       } catch (err) {
         console.error("配信取得に失敗しました", err);
@@ -161,6 +159,13 @@ export default function SchedulePage() {
   });
 
   const isLoading = loadingUser || loadingStreams;
+
+  const sortedStreams = [...filteredStreams];
+  if (activeTab === "アーカイブ") {
+    sortedStreams.sort((a, b) => new Date(b.dateTime).getTime() - new Date(a.dateTime).getTime());
+  } else {
+    sortedStreams.sort((a, b) => new Date(a.dateTime).getTime() - new Date(b.dateTime).getTime());
+  }
 
   return (
     <div className="min-h-screen bg-gray-100 p-8">
@@ -192,7 +197,7 @@ export default function SchedulePage() {
       )}
       {!isLoading && !error && filteredStreams.length > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredStreams.map((stream) => (
+          {sortedStreams.map((stream) => (
             <StreamCard
               key={stream.videoId}
               thumbnailUrl={stream.thumbnailUrl}
