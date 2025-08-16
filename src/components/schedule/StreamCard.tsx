@@ -48,16 +48,13 @@ export default function StreamCard({
       className="block"
     >
       <div className="bg-white rounded-lg shadow-md overflow-hidden">
-        <div className="relative">
+        <div className="relative w-full h-48">
           {/* 配信サムネイル */}
           <Image
             src={thumbnailUrl}
             alt={title}
-            width={480}
-            height={270}
-            layout="responsive"
-            objectFit="cover"
-            className="w-full h-auto"
+            fill
+            className="object-cover"
           />
         </div>
         <div className="relative p-4">
