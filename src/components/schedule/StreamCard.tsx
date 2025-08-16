@@ -7,6 +7,7 @@ interface StreamCardProps {
   dateTime: string;
   status: "live" | "upcoming" | "ended";
   streamUrl: string;
+  platform: "youtube" | "twitch";
 }
 
 export default function StreamCard({
@@ -16,6 +17,7 @@ export default function StreamCard({
   dateTime,
   status,
   streamUrl,
+  platform,
 }: StreamCardProps) {
   // 配信状態に応じたテキスト・スタイル
   const statusText =
@@ -31,6 +33,12 @@ export default function StreamCard({
       : status === "upcoming"
       ? "text-blue-600 font-bold"
       : "text-gray-500";
+
+  const platformIcon =
+    platform === "youtube" ? "/youtube-logo.svg" : "/twitch-logo.png";
+
+  const platformAlt = platform === "youtube" ? "YouTube" : "Twitch";
+
   return (
     // カード全体をリンクに
     <a
@@ -39,26 +47,33 @@ export default function StreamCard({
       rel="noopener noreferrer"
       className="block"
     >
-      <div>
-        {/* 配信サムネイル */}
-        <Image
-          src={thumbnailUrl}
-          alt={title}
-          width={480}
-          height={270}
-          layout="responsive" // 親要素の幅に合わせてレスポンシブに表示
-          objectFit="cover" // 画像がコンテナを覆うように調整
-          className="w-full h-auto" // Tailwind CSSでレスポンシブ対応
-        />
-        <div className="p-4">
-          {/* 配信タイトル */}
+      <div className="bg-white rounded-lg shadow-md overflow-hidden">
+        <div className="relative">
+          {/* 配信サムネイル */}
+          <Image
+            src={thumbnailUrl}
+            alt={title}
+            width={480}
+            height={270}
+            layout="responsive"
+            objectFit="cover"
+            className="w-full h-auto"
+          />
+        </div>
+        <div className="relative p-4">
           <h2 className="text-xl font-semibold mb-2 line-clamp-2">{title}</h2>
-          {/* チャンネル名 */}
           <p className="text-gray-600 text-sm mb-1">{channelName}</p>
-          {/* 配信日時 */}
           <p className="text-gray-600 text-sm">{dateTime}</p>
-          {/* 配信状態 */}
           <p className={`mt-2 ${statusClass}`}>{statusText}</p>
+          {/* プラットフォームロゴ */}
+          <div className="absolute bottom-2 right-2 bg-white bg-opacity-80 rounded-md p-1">
+            <Image
+              src={platformIcon}
+              alt={platformAlt}
+              width={48}
+              height={48}
+            />
+          </div>
         </div>
       </div>
     </a>

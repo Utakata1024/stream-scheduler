@@ -1,17 +1,13 @@
 // スケジュールページ
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import ToggleButton from "@/components/ui/ToggleButton";
 import StreamCard from "@/components/schedule/StreamCard";
 import { fetchYoutubeStreams, YoutubeStreamData } from "@/lib/api/youtube";
 import { fetchTwitchStreams, getAppAccessToken } from "@/lib/api/twitch";
 import { onAuthStateChanged, User } from "firebase/auth";
-import {
-  collection,
-  query,
-  getDocs,
-} from "firebase/firestore";
+import { collection, query, getDocs } from "firebase/firestore";
 import { db, auth } from "@/lib/firebase";
 
 // 統一されたストリームデータの型定義
@@ -46,12 +42,10 @@ export default function SchedulePage() {
     return () => unsubscribe();
   }, []);
 
-  useEffect(() => {
-    if (loadingUser || !user) {
-      setLoadingStreams(false);
-      setStreams([]);
-      return;
-    }
+  const getStreamsFromRegisteredChannels = useCallback(async () => {
+    setLoadingStreams(true);
+    setError(null);
+    let allFetchedStreams: StreamData[] = [];
 
     const YOUTUBE_API_KEY = process.env.NEXT_PUBLIC_YOUTUBE_API_KEY;
     const TWITCH_CLIENT_ID = process.env.NEXT_PUBLIC_TWITCH_CLIENT_ID;
@@ -74,33 +68,41 @@ export default function SchedulePage() {
       return;
     }
 
-    const getStreamsFromRegisteredChannels = async () => {
-      setLoadingStreams(true);
-      setError(null);
-      let allFetchedStreams: StreamData[] = [];
+    try {
+      if (!user) {
+        setError("ユーザー情報が取得できませんでした。");
+        setLoadingStreams(false);
+        return;
+      }
+      const userChannelsRef = collection(db, `users/${user.uid}/channels`);
+      const q = query(userChannelsRef);
+      const querySnapshot = await getDocs(q);
 
-      try {
-        const userChannelsRef = collection(db, `users/${user.uid}/channels`);
-        const q = query(userChannelsRef);
-        const querySnapshot = await getDocs(q);
-        const registerChannelIds: string[] = [];
-        querySnapshot.forEach((doc) => {
-          registerChannelIds.push(doc.id);
-        });
-
-        if (registerChannelIds.length === 0) {
-          setStreams([]);
-          setLoadingStreams(false);
-          return;
+      const youtubeChannelIds: string[] = [];
+      const twitchChannelIds: string[] = [];
+      querySnapshot.forEach((doc) => {
+        const data = doc.data();
+        if (data.platform === 'twitch') {
+          twitchChannelIds.push(doc.id);
+        } else {
+          youtubeChannelIds.push(doc.id);
         }
+      });
 
-        const fetchPromises: Promise<any>[] = [];
+      if (youtubeChannelIds.length === 0 && twitchChannelIds.length === 0) {
+        setStreams([]);
+        setLoadingStreams(false);
+        return;
+      }
 
-        // Twitch App Access Tokenを取得し、Twitch APIを呼び出し
+      const fetchPromises: Promise<any>[] = [];
+
+      // Twitch App Access Tokenを取得し、Twitch APIを呼び出し
+      if (twitchChannelIds.length > 0) {
         const twitchAccessToken = await getAppAccessToken(TWITCH_CLIENT_ID, TWITCH_CLIENT_SECRET);
         if (twitchAccessToken) {
           fetchPromises.push(
-            fetchTwitchStreams(registerChannelIds, twitchAccessToken, TWITCH_CLIENT_ID).then(twitchStreams =>
+            fetchTwitchStreams(twitchChannelIds, twitchAccessToken, TWITCH_CLIENT_ID).then(twitchStreams =>
               twitchStreams.map(s => ({
                 thumbnailUrl: s.thumbnail_url.replace("{width}", "480").replace("{height}", "270"),
                 title: s.title,
@@ -116,36 +118,42 @@ export default function SchedulePage() {
         } else {
           setError("Twitch認証トークンの取得に失敗しました。");
         }
+      }
 
-        // YouTube API呼び出し
+      // YouTube API呼び出し
+      if (youtubeChannelIds.length > 0) {
         fetchPromises.push(
-          Promise.all(registerChannelIds.map(channelId => fetchYoutubeStreams(channelId, YOUTUBE_API_KEY))).then(results =>
+          Promise.all(youtubeChannelIds.map(channelId => fetchYoutubeStreams(channelId, YOUTUBE_API_KEY))).then(results =>
             results.flat().map(s => ({
               ...s,
               platform: "youtube"
             }))
           )
         );
-
-        const results = await Promise.allSettled(fetchPromises);
-
-        results.forEach(result => {
-          if (result.status === 'fulfilled') {
-            allFetchedStreams = allFetchedStreams.concat(result.value);
-          }
-        });
-
-        setStreams(allFetchedStreams);
-      } catch (err) {
-        console.error("配信取得に失敗しました", err);
-        setError("配信取得に失敗しました");
-      } finally {
-        setLoadingStreams(false);
       }
-    };
 
-    getStreamsFromRegisteredChannels();
-  }, [user, loadingUser, db]);
+      const results = await Promise.allSettled(fetchPromises);
+
+      results.forEach(result => {
+        if (result.status === 'fulfilled') {
+          allFetchedStreams = allFetchedStreams.concat(result.value);
+        }
+      });
+
+      setStreams(allFetchedStreams);
+    } catch (err) {
+      console.error("配信取得に失敗しました", err);
+      setError("配信取得に失敗しました");
+    } finally {
+      setLoadingStreams(false);
+    }
+  }, [user, db]); // user と db を依存配列に追加
+
+  useEffect(() => {
+    if (user && !loadingUser) {
+      getStreamsFromRegisteredChannels();
+    }
+  }, [user, loadingUser, getStreamsFromRegisteredChannels]);
 
   const filteredStreams = streams.filter((stream) => {
     if (activeTab === "アーカイブ") {
@@ -190,12 +198,12 @@ export default function SchedulePage() {
           <p>エラー: {error}</p>
         </div>
       )}
-      {!isLoading && !error && filteredStreams.length === 0 && (
+      {!isLoading && !error && sortedStreams.length === 0 && (
         <div className="text-center text-gray-500">
           <p>現在、表示可能な配信はありません。</p>
         </div>
       )}
-      {!isLoading && !error && filteredStreams.length > 0 && (
+      {!isLoading && !error && sortedStreams.length > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {sortedStreams.map((stream) => (
             <StreamCard
@@ -206,6 +214,7 @@ export default function SchedulePage() {
               dateTime={new Date(stream.dateTime).toLocaleString("ja-JP")}
               status={stream.status}
               streamUrl={stream.streamUrl}
+              platform={stream.platform}
             />
           ))}
         </div>
