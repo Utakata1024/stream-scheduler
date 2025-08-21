@@ -1,23 +1,30 @@
 "use client";
 
 import React from "react";
-import { YoutubeChannelData } from "@/lib/api/youtube";
 import Image from "next/image";
+
+interface UnifiedChannelData {
+  channelId: string;
+  channelName: string;
+  thumbnailUrl: string;
+  platform: 'youtube' | 'twitch';
+}
 
 interface ChannelListProps {
   title: string;
-  channels: YoutubeChannelData[];
+  channels: UnifiedChannelData[];
   onDeleteChannel: (channelId: string) => Promise<void>;
 }
 
 export default function ChannelList({
+  title,
   channels,
   onDeleteChannel,
 }: ChannelListProps) {
   return (
-    <div className="bg-white p-6 rounded-lg shadow-md max-w-xl mx-auto">
+    <div className="bg-white p-6 rounded-lg shadow-md">
       <h2 className="text-2xl font-semibold mb-4 text-center">
-        登録済みチャンネル
+        {title}
       </h2>
       {channels.length === 0 ? (
         <p className="text-center text-gray-600">

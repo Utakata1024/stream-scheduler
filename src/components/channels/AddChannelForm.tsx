@@ -49,6 +49,8 @@ export default function AddChannelForm({
         ※YouTubeチャンネルIDはチャンネルのURLから取得できます。
         (例:youtube.com/channel/
         <span className="underline decoration-red-500">UC...</span>)
+      </p>
+      <p className="text-sm text-gray-500 mt-3 text-center">
         ※Twitchユーザー名はチャンネルのURLから取得できます。
         (例:twitch.tv/
         <span className="underline decoration-red-500">...</span>)
