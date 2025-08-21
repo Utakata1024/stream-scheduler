@@ -18,17 +18,16 @@ export interface YoutubeChannelData {
 }
 
 export async function fetchYoutubeStreams(
-  channelId: string,
+  channelIds: string,
   apiKey: string
 ): Promise<YoutubeStreamData[]> {
-  if (!apiKey) {
-    console.error("APIキーが設定されていません。");
+  if (!channelIds) {
     return [];
   }
 
   try {
     // チャンネル内の全ての動画IDを検索し、ライブ配信と通常の動画を区別なく取得
-    const searchUrl = `${YOUTUBE_API_BASE_URL}/search?part=id,snippet&channelId=${channelId}&type=video&order=date&maxResults=50&key=${apiKey}`;
+    const searchUrl = `${YOUTUBE_API_BASE_URL}/search?part=id,snippet&channelId=${channelIds}&type=video&order=date&maxResults=50&key=${apiKey}`;
     const searchResponse = await fetch(searchUrl);
     const searchData = await searchResponse.json();
 
@@ -37,7 +36,6 @@ export async function fetchYoutubeStreams(
       : "";
 
     if (!videoIds) {
-      console.log("動画が見つかりませんでした。");
       return [];
     }
 
@@ -93,7 +91,7 @@ export async function fetchYoutubeStreams(
 
     return streams;
   } catch (error) {
-    console.error("動画の取得に失敗しました:", error);
+    console.error("動画 の取得に失敗しました:", error);
     return [];
   }
 }

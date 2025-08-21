@@ -42,10 +42,12 @@ export default function SchedulePage() {
     return () => unsubscribe();
   }, []);
 
-  const getStreamsFromRegisteredChannels = useCallback(async () => {
-    setLoadingStreams(true);
-    setError(null);
-    let allFetchedStreams: StreamData[] = [];
+  useEffect(() => {
+    if (loadingUser || !user) {
+      setLoadingStreams(false);
+      setStreams([]);
+      return;
+    }
 
     const YOUTUBE_API_KEY = process.env.NEXT_PUBLIC_YOUTUBE_API_KEY;
     const TWITCH_CLIENT_ID = process.env.NEXT_PUBLIC_TWITCH_CLIENT_ID;
@@ -68,92 +70,107 @@ export default function SchedulePage() {
       return;
     }
 
-    try {
-      if (!user) {
-        setError("ユーザー情報が取得できませんでした。");
-        setLoadingStreams(false);
-        return;
-      }
-      const userChannelsRef = collection(db, `users/${user.uid}/channels`);
-      const q = query(userChannelsRef);
-      const querySnapshot = await getDocs(q);
+    const getStreamsFromRegisteredChannels = async () => {
+      setLoadingStreams(true);
+      setError(null);
+      let allFetchedStreams: StreamData[] = [];
 
-      const youtubeChannelIds: string[] = [];
-      const twitchChannelIds: string[] = [];
-      querySnapshot.forEach((doc) => {
-        const data = doc.data();
-        if (data.platform === 'twitch') {
-          twitchChannelIds.push(doc.id);
-        } else {
-          youtubeChannelIds.push(doc.id);
+      try {
+        const userChannelsRef = collection(db, `users/${user.uid}/channels`);
+        const q = query(userChannelsRef);
+        const querySnapshot = await getDocs(q);
+
+        const youtubeChannelIds: string[] = [];
+        const twitchChannelIds: string[] = [];
+        querySnapshot.forEach((doc) => {
+          const data = doc.data();
+          if (data.platform === "twitch") {
+            twitchChannelIds.push(doc.id);
+          } else {
+            youtubeChannelIds.push(doc.id);
+          }
+        });
+
+        if (youtubeChannelIds.length === 0 && twitchChannelIds.length === 0) {
+          setStreams([]);
+          setLoadingStreams(false);
+          return;
         }
-      });
 
-      if (youtubeChannelIds.length === 0 && twitchChannelIds.length === 0) {
-        setStreams([]);
-        setLoadingStreams(false);
-        return;
-      }
+        const fetchPromises: Promise<any>[] = [];
 
-      const fetchPromises: Promise<any>[] = [];
-
-      // Twitch App Access Tokenを取得し、Twitch APIを呼び出し
-      if (twitchChannelIds.length > 0) {
-        const twitchAccessToken = await getAppAccessToken(TWITCH_CLIENT_ID, TWITCH_CLIENT_SECRET);
-        if (twitchAccessToken) {
-          fetchPromises.push(
-            fetchTwitchStreams(twitchChannelIds, twitchAccessToken, TWITCH_CLIENT_ID).then(twitchStreams =>
-              twitchStreams.map(s => ({
-                thumbnailUrl: s.thumbnail_url.replace("{width}", "480").replace("{height}", "270"),
-                title: s.title,
-                channelName: s.user_name,
-                dateTime: s.started_at,
-                status: "live",
-                streamUrl: `https://www.twitch.tv/${s.user_name}`,
-                videoId: s.id,
-                platform: "twitch"
-              }))
-            )
+        // Twitch App Access Tokenを取得し、Twitch APIを呼び出し
+        if (twitchChannelIds.length > 0) {
+          const twitchAccessToken = await getAppAccessToken(
+            TWITCH_CLIENT_ID,
+            TWITCH_CLIENT_SECRET
           );
-        } else {
-          setError("Twitch認証トークンの取得に失敗しました。");
+          if (twitchAccessToken) {
+            fetchPromises.push(
+              fetchTwitchStreams(
+                twitchChannelIds,
+                twitchAccessToken,
+                TWITCH_CLIENT_ID
+              ).then((twitchStreams) =>
+                twitchStreams.map((s) => ({
+                  thumbnailUrl: s.thumbnail_url
+                    .replace("{width}", "480")
+                    .replace("{height}", "270"),
+                  title: s.title,
+                  channelName: s.user_name,
+                  dateTime: s.started_at,
+                  status: "live",
+                  streamUrl: `https://www.twitch.tv/${s.user_name}`,
+                  videoId: s.id,
+                  platform: "twitch",
+                }))
+              )
+            );
+          } else {
+            setError("Twitch認証トークンの取得に失敗しました。");
+          }
         }
-      }
 
-      // YouTube API呼び出し
-      if (youtubeChannelIds.length > 0) {
-        fetchPromises.push(
-          Promise.all(youtubeChannelIds.map(channelId => fetchYoutubeStreams(channelId, YOUTUBE_API_KEY))).then(results =>
-            results.flat().map(s => ({
-              ...s,
-              platform: "youtube"
-            }))
-          )
-        );
-      }
-
-      const results = await Promise.allSettled(fetchPromises);
-
-      results.forEach(result => {
-        if (result.status === 'fulfilled') {
-          allFetchedStreams = allFetchedStreams.concat(result.value);
+        // YouTube API呼び出し
+        if (youtubeChannelIds.length > 0) {
+          youtubeChannelIds.forEach((channelId) => {
+            fetchPromises.push(
+              fetchYoutubeStreams(channelId, YOUTUBE_API_KEY).then(
+                (youtubeStreams) =>
+                  youtubeStreams.map((s) => ({
+                    thumbnailUrl: s.thumbnailUrl,
+                    title: s.title,
+                    channelName: s.channelName,
+                    dateTime: s.dateTime,
+                    status: s.status,
+                    streamUrl: s.streamUrl,
+                    videoId: s.videoId,
+                    platform: "youtube",
+                  }))
+              )
+            );
+          });
         }
-      });
 
-      setStreams(allFetchedStreams);
-    } catch (err) {
-      console.error("配信取得に失敗しました", err);
-      setError("配信取得に失敗しました");
-    } finally {
-      setLoadingStreams(false);
-    }
-  }, [user, db]); // user と db を依存配列に追加
+        const results = await Promise.allSettled(fetchPromises);
 
-  useEffect(() => {
-    if (user && !loadingUser) {
-      getStreamsFromRegisteredChannels();
-    }
-  }, [user, loadingUser, getStreamsFromRegisteredChannels]);
+        results.forEach((result) => {
+          if (result.status === "fulfilled") {
+            allFetchedStreams = allFetchedStreams.concat(result.value);
+          }
+        });
+
+        setStreams(allFetchedStreams);
+      } catch (err) {
+        console.error("配信取得に失敗しました", err);
+        setError("配信取得に失敗しました");
+      } finally {
+        setLoadingStreams(false);
+      }
+    };
+
+    getStreamsFromRegisteredChannels();
+  }, [user, loadingUser, db]);
 
   const filteredStreams = streams.filter((stream) => {
     if (activeTab === "アーカイブ") {
@@ -170,9 +187,13 @@ export default function SchedulePage() {
 
   const sortedStreams = [...filteredStreams];
   if (activeTab === "アーカイブ") {
-    sortedStreams.sort((a, b) => new Date(b.dateTime).getTime() - new Date(a.dateTime).getTime());
+    sortedStreams.sort(
+      (a, b) => new Date(b.dateTime).getTime() - new Date(a.dateTime).getTime()
+    );
   } else {
-    sortedStreams.sort((a, b) => new Date(a.dateTime).getTime() - new Date(b.dateTime).getTime());
+    sortedStreams.sort(
+      (a, b) => new Date(a.dateTime).getTime() - new Date(b.dateTime).getTime()
+    );
   }
 
   return (
