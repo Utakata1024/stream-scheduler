@@ -133,18 +133,23 @@ export default function SchedulePage() {
 
         // YouTube API呼び出し
         if (youtubeChannelIds.length > 0) {
-          fetchPromises.push(
-            Promise.all(
-              youtubeChannelIds.map((channelId) =>
-                fetchYoutubeStreams(channelId, YOUTUBE_API_KEY)
+          youtubeChannelIds.forEach((channelId) => {
+            fetchPromises.push(
+              fetchYoutubeStreams(channelId, YOUTUBE_API_KEY).then(
+                (youtubeStreams) =>
+                  youtubeStreams.map((s) => ({
+                    thumbnailUrl: s.thumbnailUrl,
+                    title: s.title,
+                    channelName: s.channelName,
+                    dateTime: s.dateTime,
+                    status: s.status,
+                    streamUrl: s.streamUrl,
+                    videoId: s.videoId,
+                    platform: "youtube",
+                  }))
               )
-            ).then((results) =>
-              results.flat().map((s) => ({
-                ...s,
-                platform: "youtube",
-              }))
-            )
-          );
+            );
+          });
         }
 
         const results = await Promise.allSettled(fetchPromises);

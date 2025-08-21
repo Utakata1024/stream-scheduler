@@ -3,13 +3,25 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   /* config options here */
   images: {
-    // 許可する画像ホスト名（ドメイン）を配列で指定
-    domains: [
-      'placehold.co', 
-      'i.ytimg.com',  // YouTube API連携用
-      'yt3.ggpht.com', // YouTubeチャンネルアイコン用
-      'static-cdn.jtvnw.net', // Twitch API連携用
-      // 他のドメインがあればここに追加
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "i.ytimg.com",
+        port: "",
+        pathname: "/vi/**",
+      },
+      {
+        protocol: "https",
+        hostname: "yt3.ggpht.com",
+        port: "",
+        pathname: "**",
+      },
+      {
+        protocol: "https",
+        hostname: "static-cdn.jtvnw.net",
+        port: "",
+        pathname: "**",
+      },
     ],
   },
 };
