@@ -5,6 +5,7 @@ import { YoutubeChannelData } from "@/lib/api/youtube";
 import Image from "next/image";
 
 interface ChannelListProps {
+  title: string;
   channels: YoutubeChannelData[];
   onDeleteChannel: (channelId: string) => Promise<void>;
 }
