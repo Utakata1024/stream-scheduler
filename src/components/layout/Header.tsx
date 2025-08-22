@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { onAuthStateChanged, signOut, User } from "firebase/auth";
+import { onAuthStateChanged, User } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 
 export default function Header() {
@@ -23,16 +23,6 @@ export default function Header() {
     });
     return () => unsubscribe();
   }, []);
-
-  const handleLogout = async () => {
-    try {
-      await signOut(auth);
-      router.push("/login"); // ログアウト後にログインページへリダイレクト
-    } catch (error) {
-      console.error("ログアウトに失敗しました:", error);
-      alert("ログアウトに失敗しました。");
-    }
-  };
 
   // ログイン・新規登録ページはヘッダーを表示しない
   if (loadingAuth || isLoginPage || isSignUpPage) {
@@ -66,14 +56,6 @@ export default function Header() {
                 >
                   チャンネル管理
                 </Link>
-              </li>
-              <li>
-                <button
-                  onClick={handleLogout}
-                  className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors duration-200 text-sm"
-                >
-                  ログアウト
-                </button>
               </li>
               <li>
                 <Link
