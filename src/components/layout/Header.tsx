@@ -51,14 +51,14 @@ export default function Header() {
         {user ? (
           <nav>
             <ul className="flex space-x-6">
-              <li>
+              {/* <li>
                 <Link
                   href="/calendar"
                   className="text-lg hover:text-indigo-200 transition-colors duration-200"
                 >
                   カレンダー
                 </Link>
-              </li>
+              </li> */}
               <li>
                 <Link
                   href="/channels"
