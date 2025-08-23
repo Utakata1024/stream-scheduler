@@ -99,7 +99,7 @@ export default function SchedulePage() {
 
         const fetchPromises: Promise<any>[] = [];
 
-        // Twitch App Access Tokenを取得し、Twitch APIを呼び出し
+        // Twitch App Access Tokenを取得→Twitch APIを呼び出し
         if (twitchChannelIds.length > 0) {
           const twitchAccessToken = await getAppAccessToken(
             TWITCH_CLIENT_ID,
