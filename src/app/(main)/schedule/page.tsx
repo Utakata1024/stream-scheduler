@@ -43,29 +43,11 @@ export default function SchedulePage() {
   }, []);
 
   useEffect(() => {
-    if (loadingUser || !user) {
-      setLoadingStreams(false);
+    setLoadingStreams(true);
+    setError(null);
+
+    if (!user) {
       setStreams([]);
-      return;
-    }
-
-    const YOUTUBE_API_KEY = process.env.NEXT_PUBLIC_YOUTUBE_API_KEY;
-    const TWITCH_CLIENT_ID = process.env.NEXT_PUBLIC_TWITCH_CLIENT_ID;
-    const TWITCH_CLIENT_SECRET = process.env.NEXT_PUBLIC_TWITCH_CLIENT_SECRET;
-
-    if (!YOUTUBE_API_KEY) {
-      setError("YouTube APIキーが設定されていません。");
-      setLoadingStreams(false);
-      return;
-    }
-    if (!TWITCH_CLIENT_ID || !TWITCH_CLIENT_SECRET) {
-      setError("Twitch APIキーが設定されていません。");
-      setLoadingStreams(false);
-      return;
-    }
-    if (!db) {
-      console.error("Firestore DB is not initialized.");
-      setError("データベースが利用できません");
       setLoadingStreams(false);
       return;
     }
@@ -167,7 +149,7 @@ export default function SchedulePage() {
       } finally {
         setLoadingStreams(false);
       }
-    };
+      
 
     getStreamsFromRegisteredChannels();
   }, [user, loadingUser, db]);
