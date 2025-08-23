@@ -4,8 +4,6 @@ import { useEffect, useState, useCallback } from "react";
 import { doc, setDoc, deleteDoc, collection, query, getDocs } from "firebase/firestore";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { db, auth } from "@/lib/firebase";
-import { fetchChannelDetails as fetchYoutubeChannelDetails, YoutubeChannelData } from "@/lib/api/youtube";
-import { fetchUserByLogin, getAppAccessToken } from "@/lib/api/twitch";
 import AddChannelForm from "@/components/channels/AddChannelForm";
 import ChannelList from "@/components/channels/ChannelList";
 import AlertMessage from "@/components/ui/AlertMessage";
@@ -32,12 +30,8 @@ export default function ChannelsPage() {
         setErrorMessage(null);
         setSuccessMessage(null);
 
-        const YOUTUBE_API_KEY = process.env.NEXT_PUBLIC_YOUTUBE_API_KEY;
-        const TWITCH_CLIENT_ID = process.env.NEXT_PUBLIC_TWITCH_CLIENT_ID;
-        const TWITCH_CLIENT_SECRET = process.env.NEXT_PUBLIC_TWITCH_CLIENT_SECRET;
-
-        if (!YOUTUBE_API_KEY || !TWITCH_CLIENT_ID || !TWITCH_CLIENT_SECRET || !db) {
-            setErrorMessage("APIキーまたはデータベースが利用できません");
+        if (!db) {
+            setErrorMessage("データベースが利用できません");
             setLoading(false);
             return;
         }
@@ -92,58 +86,28 @@ export default function ChannelsPage() {
         }
         setAddingChannel(true);
         const trimmedInput = newChannelInput.trim();
-        let channelDetails = null;
-        let channelId = '';
-        let platform: 'youtube' | 'twitch';
+
         try {
-            const YOUTUBE_API_KEY = process.env.NEXT_PUBLIC_YOUTUBE_API_KEY;
-            const TWITCH_CLIENT_ID = process.env.NEXT_PUBLIC_TWITCH_CLIENT_ID;
-            const TWITCH_CLIENT_SECRET = process.env.NEXT_PUBLIC_TWITCH_CLIENT_SECRET;
-            if (trimmedInput.startsWith('UC')) {
-                platform = 'youtube';
-                channelId = trimmedInput;
-                if (!YOUTUBE_API_KEY) throw new Error("YouTube APIキーが設定されていません");
-                channelDetails = await fetchYoutubeChannelDetails(channelId, YOUTUBE_API_KEY);
-            } else {
-                platform = 'twitch';
-                if (!TWITCH_CLIENT_ID || !TWITCH_CLIENT_SECRET) throw new Error("Twitch APIキーが設定されていません");
-                const twitchAccessToken = await getAppAccessToken(TWITCH_CLIENT_ID, TWITCH_CLIENT_SECRET);
-                if (!twitchAccessToken) throw new Error("Twitch認証トークンの取得に失敗しました。");
-                const twitchUser = await fetchUserByLogin(trimmedInput, twitchAccessToken, TWITCH_CLIENT_ID);
-                if (twitchUser) {
-                    channelId = twitchUser.id;
-                    channelDetails = {
-                        channelId: twitchUser.id,
-                        channelName: twitchUser.display_name,
-                        thumbnailUrl: twitchUser.profile_image_url
-                    };
-                }
-            }
-            if (!channelDetails) {
-                setErrorMessage("指定されたチャンネルが見つかりません。");
-                resetInput("");
-                return;
-            }
-            if (channels.some((c) => c.channelId === channelId)) {
-                setErrorMessage("このチャンネルは既に登録されています。");
-                resetInput("");
-                return;
-            }
-            if (!db) throw new Error("データベースが利用できません");
-            const channelDocRef = doc(db, `users/${user.uid}/channels`, channelId);
-            await setDoc(channelDocRef, {
-                channelName: channelDetails.channelName,
-                thumbnailUrl: channelDetails.thumbnailUrl,
-                platform: platform,
-                addedAt: new Date(),
+            // GoバックエンドのAPIを呼び出す
+            const response = await fetch(`http://localhost:8080/api/channels`, {
+                method: 'POST',
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-User-ID": user.uid,
+                },
+                body: JSON.stringify({ input: trimmedInput }),
             });
-            const newChannel: UnifiedChannelData = {
-                channelId: channelDetails.channelId,
-                channelName: channelDetails.channelName,
-                thumbnailUrl: channelDetails.thumbnailUrl,
-                platform: platform
-            };
-            setChannels([...channels, newChannel]);
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.message || "チャンネルの追加に失敗しました");
+            }
+
+            // サーバーから返された新しいチャンネル情報を取得
+            const newChannelData = await response.json();
+
+            // チャンネルリスト更新
+            setChannels(prev => [...prev, newChannelData]);
             resetInput("");
             setSuccessMessage("チャンネルが追加されました");
         } catch (error: any) {
@@ -157,17 +121,31 @@ export default function ChannelsPage() {
     const handleDeleteChannel = async (channelIdToDelete: string) => {
         setErrorMessage(null);
         setSuccessMessage(null);
-        if (!user || !db) {
+        if (!user) {
             setErrorMessage("チャンネルを削除するにはログインが必要です。");
             return;
         }
         if (confirm(`チャンネルID "${channelIdToDelete}" を削除しますか？`)) {
             setLoading(true);
+
+            // GoバックエンドのAPIを呼び出す
             try {
-                const channelDocRef = doc(db, `users/${user.uid}/channels`, channelIdToDelete);
-                await deleteDoc(channelDocRef);
+                const response = await fetch(`http://localhost:8080/api/channels`, {
+                    method: 'DELETE',
+                    headers: {
+                        "Content-Type": "application/json",
+                        "X-User-ID": user.uid,
+                    },
+                    body: JSON.stringify({ channelId: channelIdToDelete }),
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.message || "チャンネルの削除に失敗しました");
+                }
+
                 setChannels(channels.filter((channel) => channel.channelId !== channelIdToDelete));
-                setSuccessMessage("チャンネルが削除されました!");
+                setSuccessMessage("チャンネルが削除されました");
             } catch (error) {
                 console.error("チャンネルの削除に失敗しました", error);
                 setErrorMessage("チャンネルの削除に失敗しました");
@@ -176,7 +154,8 @@ export default function ChannelsPage() {
             }
         }
     };
-
+    
+    // プラットフォームごとにチャンネルを分ける
     const youtubeChannels = channels.filter(c => c.platform === 'youtube');
     const twitchChannels = channels.filter(c => c.platform === 'twitch');
 
