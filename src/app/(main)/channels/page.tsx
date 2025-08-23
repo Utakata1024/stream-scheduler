@@ -29,7 +29,7 @@ export default function ChannelsPage() {
         setLoading(true);
         setErrorMessage(null);
         setSuccessMessage(null);
-
+        
         if (!db) {
             setErrorMessage("データベースが利用できません");
             setLoading(false);
@@ -86,11 +86,10 @@ export default function ChannelsPage() {
         }
         setAddingChannel(true);
         const trimmedInput = newChannelInput.trim();
-
+        
         try {
-            // GoバックエンドのAPIを呼び出す
             const response = await fetch(`http://localhost:8080/api/channels`, {
-                method: 'POST',
+                method: "POST",
                 headers: {
                     "Content-Type": "application/json",
                     "X-User-ID": user.uid,
@@ -100,13 +99,11 @@ export default function ChannelsPage() {
 
             if (!response.ok) {
                 const errorData = await response.json();
-                throw new Error(errorData.message || "チャンネルの追加に失敗しました");
+                throw new Error(errorData.message || "チャンネルの追加に失敗しました。");
             }
 
-            // サーバーから返された新しいチャンネル情報を取得
             const newChannelData = await response.json();
-
-            // チャンネルリスト更新
+            
             setChannels(prev => [...prev, newChannelData]);
             resetInput("");
             setSuccessMessage("チャンネルが追加されました");
@@ -127,25 +124,23 @@ export default function ChannelsPage() {
         }
         if (confirm(`チャンネルID "${channelIdToDelete}" を削除しますか？`)) {
             setLoading(true);
-
-            // GoバックエンドのAPIを呼び出す
             try {
                 const response = await fetch(`http://localhost:8080/api/channels`, {
-                    method: 'DELETE',
+                    method: "DELETE",
                     headers: {
                         "Content-Type": "application/json",
                         "X-User-ID": user.uid,
                     },
                     body: JSON.stringify({ channelId: channelIdToDelete }),
                 });
-
+                
                 if (!response.ok) {
                     const errorData = await response.json();
-                    throw new Error(errorData.message || "チャンネルの削除に失敗しました");
+                    throw new Error(errorData.message || "チャンネルの削除に失敗しました。");
                 }
-
+                
                 setChannels(channels.filter((channel) => channel.channelId !== channelIdToDelete));
-                setSuccessMessage("チャンネルが削除されました");
+                setSuccessMessage("チャンネルが削除されました!");
             } catch (error) {
                 console.error("チャンネルの削除に失敗しました", error);
                 setErrorMessage("チャンネルの削除に失敗しました");
@@ -154,8 +149,7 @@ export default function ChannelsPage() {
             }
         }
     };
-    
-    // プラットフォームごとにチャンネルを分ける
+
     const youtubeChannels = channels.filter(c => c.platform === 'youtube');
     const twitchChannels = channels.filter(c => c.platform === 'twitch');
 
