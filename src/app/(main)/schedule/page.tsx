@@ -53,7 +53,7 @@ export default function SchedulePage() {
     const YOUTUBE_API_KEY = process.env.NEXT_PUBLIC_YOUTUBE_API_KEY;
     const TWITCH_CLIENT_ID = process.env.NEXT_PUBLIC_TWITCH_CLIENT_ID;
     const TWITCH_CLIENT_SECRET = process.env.NEXT_PUBLIC_TWITCH_CLIENT_SECRET;
-
+    
     if (!YOUTUBE_API_KEY) {
       setError("YouTube APIキーが設定されていません。");
       setLoadingStreams(false);
@@ -100,7 +100,7 @@ export default function SchedulePage() {
 
         const fetchPromises: Promise<any>[] = [];
 
-        // Twitch App Access Tokenを取得し、Twitch APIを呼び出し
+        // Twitch App Access Tokenを取得→Twitch APIを呼び出し
         if (twitchChannelIds.length > 0) {
           const twitchAccessToken = await getAppAccessToken(
             TWITCH_CLIENT_ID,
@@ -168,7 +168,7 @@ export default function SchedulePage() {
       } finally {
         setLoadingStreams(false);
       }
-    };
+      
 
     getStreamsFromRegisteredChannels();
   }, [user, loadingUser, db]);
