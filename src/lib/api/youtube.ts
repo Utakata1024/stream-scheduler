@@ -1,4 +1,4 @@
-// YouTube Data APIのベースURL
+// 修正後のコード (src/lib/api/youtube.ts)
 const YOUTUBE_API_BASE_URL = "https://www.googleapis.com/youtube/v3";
 
 export interface YoutubeStreamData {
@@ -18,16 +18,16 @@ export interface YoutubeChannelData {
 }
 
 export async function fetchYoutubeStreams(
-  channelIds: string,
+  channelId: string,
   apiKey: string
 ): Promise<YoutubeStreamData[]> {
-  if (!channelIds) {
+  if (!channelId) {
     return [];
   }
 
   try {
-    // チャンネル内の全ての動画IDを検索し、ライブ配信と通常の動画を区別なく取得
-    const searchUrl = `${YOUTUBE_API_BASE_URL}/search?part=id,snippet&channelId=${channelIds}&type=video&order=date&maxResults=50&key=${apiKey}`;
+    // 1. 最新の動画を1回のsearch API呼び出しで取得
+    const searchUrl = `${YOUTUBE_API_BASE_URL}/search?part=id,snippet&channelId=${channelId}&type=video&order=date&maxResults=50&key=${apiKey}`;
     const searchResponse = await fetch(searchUrl);
     const searchData = await searchResponse.json();
 
@@ -39,7 +39,7 @@ export async function fetchYoutubeStreams(
       return [];
     }
 
-    // 取得した動画IDを使って、詳細情報をvideos APIから取得
+    // 2. 取得した動画IDの詳細情報を1回のvideos API呼び出しで取得
     const videosUrl = `${YOUTUBE_API_BASE_URL}/videos?part=snippet,liveStreamingDetails&id=${videoIds}&key=${apiKey}`;
     const videosResponse = await fetch(videosUrl);
     const videosData = await videosResponse.json();
@@ -50,7 +50,7 @@ export async function fetchYoutubeStreams(
       videosData.items.forEach((item: any) => {
         const liveDetails = item.liveStreamingDetails;
 
-        // liveStreamingDetailsが存在しない場合はライブ配信ではないため、この要件ではスキップ
+        // liveStreamingDetailsが存在する動画のみをフィルタリング
         if (!liveDetails) {
           return;
         }
@@ -85,13 +85,14 @@ export async function fetchYoutubeStreams(
       });
     }
 
+    // 配信日時でソート
     streams.sort(
       (a, b) => new Date(b.dateTime).getTime() - new Date(a.dateTime).getTime()
     );
 
     return streams;
   } catch (error) {
-    console.error("動画 の取得に失敗しました:", error);
+    console.error("動画の取得に失敗しました:", error);
     return [];
   }
 }

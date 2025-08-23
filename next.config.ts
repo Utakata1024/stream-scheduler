@@ -22,6 +22,13 @@ const nextConfig: NextConfig = {
         port: "",
         pathname: "**",
       },
+      // YouTubeの別のサムネイル形式を許可するための設定を追加
+      {
+        protocol: "https",
+        hostname: "i.ytimg.com",
+        port: "",
+        pathname: "/**",
+      },
     ],
   },
 };
