@@ -4,8 +4,6 @@
 import { useEffect, useState, useCallback } from "react";
 import ToggleButton from "@/components/ui/ToggleButton";
 import StreamCard from "@/components/schedule/StreamCard";
-import { fetchYoutubeStreams, YoutubeStreamData } from "@/lib/api/youtube";
-import { fetchTwitchStreams, getAppAccessToken } from "@/lib/api/twitch";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { collection, query, getDocs } from "firebase/firestore";
 import { db, auth } from "@/lib/firebase";
@@ -27,8 +25,8 @@ export default function SchedulePage() {
   const [streams, setStreams] = useState<StreamData[]>([]);
   const [loadingStreams, setLoadingStreams] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [user, setUser] = useState<User | null>(null);
   const [loadingUser, setLoadingUser] = useState(true);
+  const [user, setUser] = useState<User | null>(null);
 
   const handleTabClick = (label: string) => {
     setActiveTab(label);
@@ -42,136 +40,45 @@ export default function SchedulePage() {
     return () => unsubscribe();
   }, []);
 
-  useEffect(() => {
-    if (loadingUser || !user) {
-      setLoadingStreams(false);
+  const getStreamsFromRegisteredChannels = useCallback(async () => {
+    setLoadingStreams(true);
+    setError(null);
+
+    if (!user) {
       setStreams([]);
-      return;
-    }
-
-    // APIキーの取得
-    const YOUTUBE_API_KEY = process.env.NEXT_PUBLIC_YOUTUBE_API_KEY;
-    const TWITCH_CLIENT_ID = process.env.NEXT_PUBLIC_TWITCH_CLIENT_ID;
-    const TWITCH_CLIENT_SECRET = process.env.NEXT_PUBLIC_TWITCH_CLIENT_SECRET;
-
-    if (!YOUTUBE_API_KEY) {
-      setError("YouTube APIキーが設定されていません。");
-      setLoadingStreams(false);
-      return;
-    }
-    if (!TWITCH_CLIENT_ID || !TWITCH_CLIENT_SECRET) {
-      setError("Twitch APIキーが設定されていません。");
-      setLoadingStreams(false);
-      return;
-    }
-    if (!db) {
-      console.error("Firestore DB is not initialized.");
-      setError("データベースが利用できません");
       setLoadingStreams(false);
       return;
     }
 
-    const getStreamsFromRegisteredChannels = async () => {
-      setLoadingStreams(true);
-      setError(null);
-      let allFetchedStreams: StreamData[] = [];
+    try {
+      // GoバックエンドのAPIを呼び出す
+      // fetchのURLはGoサーバーのアドレスとポートに合わせる
+      const response = await fetch(
+        `http://localhost:8080/api/streams?uid=${user.uid}`
+      );
 
-      try {
-        const userChannelsRef = collection(db, `users/${user.uid}/channels`);
-        const q = query(userChannelsRef);
-        const querySnapshot = await getDocs(q);
-
-        const youtubeChannelIds: string[] = [];
-        const twitchChannelIds: string[] = [];
-        querySnapshot.forEach((doc) => {
-          const data = doc.data();
-          if (data.platform === "twitch") {
-            twitchChannelIds.push(doc.id);
-          } else {
-            youtubeChannelIds.push(doc.id);
-          }
-        });
-
-        if (youtubeChannelIds.length === 0 && twitchChannelIds.length === 0) {
-          setStreams([]);
-          setLoadingStreams(false);
-          return;
-        }
-
-        const fetchPromises: Promise<any>[] = [];
-
-        // Twitch App Access Tokenを取得し、Twitch APIを呼び出し
-        if (twitchChannelIds.length > 0) {
-          const twitchAccessToken = await getAppAccessToken(
-            TWITCH_CLIENT_ID,
-            TWITCH_CLIENT_SECRET
-          );
-          if (twitchAccessToken) {
-            fetchPromises.push(
-              fetchTwitchStreams(
-                twitchChannelIds,
-                twitchAccessToken,
-                TWITCH_CLIENT_ID
-              ).then((twitchStreams) =>
-                twitchStreams.map((s) => ({
-                  thumbnailUrl: s.thumbnail_url
-                    .replace("{width}", "480")
-                    .replace("{height}", "270"),
-                  title: s.title,
-                  channelName: s.user_name,
-                  dateTime: s.started_at,
-                  status: "live",
-                  streamUrl: `https://www.twitch.tv/${s.user_name}`,
-                  videoId: s.id,
-                  platform: "twitch",
-                }))
-              )
-            );
-          } else {
-            setError("Twitch認証トークンの取得に失敗しました。");
-          }
-        }
-
-        // YouTube API呼び出し
-        if (youtubeChannelIds.length > 0) {
-          youtubeChannelIds.forEach((channelId) => {
-            fetchPromises.push(
-              fetchYoutubeStreams(channelId, YOUTUBE_API_KEY).then(
-                (youtubeStreams) =>
-                  youtubeStreams.map((s) => ({
-                    thumbnailUrl: s.thumbnailUrl,
-                    title: s.title,
-                    channelName: s.channelName,
-                    dateTime: s.dateTime,
-                    status: s.status,
-                    streamUrl: s.streamUrl,
-                    videoId: s.videoId,
-                    platform: "youtube",
-                  }))
-              )
-            );
-          });
-        }
-
-        const results = await Promise.allSettled(fetchPromises);
-
-        results.forEach((result) => {
-          if (result.status === "fulfilled") {
-            allFetchedStreams = allFetchedStreams.concat(result.value);
-          }
-        });
-
-        setStreams(allFetchedStreams);
-      } catch (err) {
-        console.error("配信取得に失敗しました", err);
-        setError("配信取得に失敗しました");
-      } finally {
-        setLoadingStreams(false);
+      if (response.ok) {
+        throw new Error("GoバックエンドのAPIからのデータ取得に失敗しました");
       }
-    };
 
-    getStreamsFromRegisteredChannels();
-  }, [user, loadingUser, db]);
+      const data = await response.json();
+      setStreams(data);
+    } catch (err: any) {
+      console.error("配信取得に失敗しました:", err);
+      setError(err.message || "配信データの取得中にエラーが発生しました");
+    } finally {
+      setLoadingStreams(false);
+    }
+  }, [user]);
+
+  useEffect(() => {
+    if (!loadingUser && user) {
+      getStreamsFromRegisteredChannels();
+    }
+    if (!loadingUser && !user) {
+      setLoadingStreams(false);
+    }
+  }, [user, loadingUser, getStreamsFromRegisteredChannels]);
 
   const filteredStreams = streams.filter((stream) => {
     if (activeTab === "アーカイブ") {
