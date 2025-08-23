@@ -25,8 +25,8 @@ export default function SchedulePage() {
   const [streams, setStreams] = useState<StreamData[]>([]);
   const [loadingStreams, setLoadingStreams] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [loadingUser, setLoadingUser] = useState(true);
   const [user, setUser] = useState<User | null>(null);
+  const [loadingUser, setLoadingUser] = useState(true);
 
   const handleTabClick = (label: string) => {
     setActiveTab(label);
@@ -43,7 +43,7 @@ export default function SchedulePage() {
   const getStreamsFromRegisteredChannels = useCallback(async () => {
     setLoadingStreams(true);
     setError(null);
-
+    
     if (!user) {
       setStreams([]);
       setLoadingStreams(false);
@@ -51,21 +51,17 @@ export default function SchedulePage() {
     }
 
     try {
-      // GoバックエンドのAPIを呼び出す
-      // fetchのURLはGoサーバーのアドレスとポートに合わせる
-      const response = await fetch(
-        `http://localhost:8080/api/streams?uid=${user.uid}`
-      );
+      const response = await fetch(`http://localhost:8080/api/streams?uid=${user.uid}`);
 
-      if (response.ok) {
+      if (!response.ok) {
         throw new Error("GoバックエンドのAPIからのデータ取得に失敗しました");
       }
 
       const data = await response.json();
       setStreams(data);
     } catch (err: any) {
-      console.error("配信取得に失敗しました:", err);
-      setError(err.message || "配信データの取得中にエラーが発生しました");
+      console.error("配信取得に失敗しました", err);
+      setError(err.message || "配信取得に失敗しました");
     } finally {
       setLoadingStreams(false);
     }
@@ -80,7 +76,7 @@ export default function SchedulePage() {
     }
   }, [user, loadingUser, getStreamsFromRegisteredChannels]);
 
-  const filteredStreams = streams.filter((stream) => {
+  const filteredStreams = (streams || []).filter((stream) => {
     if (activeTab === "アーカイブ") {
       return stream.status === "ended";
     } else if (activeTab === "配信中") {
