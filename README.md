@@ -58,7 +58,7 @@
   - Tailwind CSS
 
 - バック
-  - Firebase
+  - Supabase
   - YouTube API
   - Twitch API
   - Go（未定）
