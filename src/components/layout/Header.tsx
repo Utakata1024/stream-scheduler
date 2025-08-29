@@ -17,21 +17,24 @@ export default function Header() {
   useEffect(() => {
     const { data: authListener } = supabase.auth.onAuthStateChange(
       (event, session) => {
-          setUser(session?.user ?? null);
-          setUser(null);
+        setUser(session?.user ?? null);
+        setLoadingAuth(false);
       }
     );
-    
+
     // 初回ロード時の認証状態を確認
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
       setLoadingAuth(false);
     });
 
-    return () => authListener.subscription.unsubscribe();
+    return () => {
+      authListener.subscription.unsubscribe();
+    };
   }, []);
 
   // ログイン・新規登録ページはヘッダーを表示しない
+  // 認証状態がロード中の場合もヘッダーを表示しないようにする
   if (loadingAuth || isLoginPage || isSignUpPage) {
     return null;
   }
