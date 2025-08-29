@@ -1,30 +1,40 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { onAuthStateChanged, User } from "firebase/auth";
-import { auth } from "@/lib/firebase";
+import { supabase } from "@/lib/supabase";
 
 export default function Header() {
   const pathname = usePathname();
-  const router = useRouter();
   const isLoginPage = pathname === "/login";
   const isSignUpPage = pathname === "/signup";
 
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<any | null>(null);
   const [loadingAuth, setLoadingAuth] = useState(true);
 
-  // Firebaseの認証状態を監視
+  // Supabaseの認証状態を監視
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setUser(user);
+    const { data: authListener } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        setUser(session?.user ?? null);
+        setLoadingAuth(false);
+      }
+    );
+
+    // 初回ロード時の認証状態を確認
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
       setLoadingAuth(false);
     });
-    return () => unsubscribe();
+
+    return () => {
+      authListener.subscription.unsubscribe();
+    };
   }, []);
 
   // ログイン・新規登録ページはヘッダーを表示しない
+  // 認証状態がロード中の場合もヘッダーを表示しないようにする
   if (loadingAuth || isLoginPage || isSignUpPage) {
     return null;
   }
