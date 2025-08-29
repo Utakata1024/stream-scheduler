@@ -1,12 +1,9 @@
 "use client";
 
 import React, { useState } from "react";
-import { createUserWithEmailAndPassword } from "firebase/auth";
-import { auth } from "@/lib/firebase";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import firebase from "firebase/compat/app";
-import { FirebaseError } from "firebase/app";
+import { supabase } from "@/lib/supabase";
 
 export default function SignUpForm() {
   const [email, setEmail] = useState("");
@@ -15,12 +12,14 @@ export default function SignUpForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
   const router = useRouter();
 
   // フォーム送信時の処理
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    setSuccess(null);
 
     // パスワードの確認
     if (password !== confirmPassword) {
@@ -28,25 +27,33 @@ export default function SignUpForm() {
       return;
     }
 
+    // パスワードの検証
+    if (password.length < 6) {
+      setError("パスワードは6文字以上である必要があります。");
+      return;
+    }
+
     // 新規登録機能の実行
     try {
-      await createUserWithEmailAndPassword(auth, email, password);
-      router.push("/schedule"); // 成功→スケジュールページへ
-    } catch (err: unknown) {
-      // エラー処理
+      const { data, error: authError } = await supabase.auth.signUp({
+        email,
+        password,
+      });
+      if (authError) {
+        throw authError;
+      }
+      setSuccess("登録が完了しました。確認メールを送信しました。");
+      // router.push("/login"); // 成功→ログインページへ
+    } catch (err: any) {
       console.log("新規登録エラー:", err);
-      if (err instanceof FirebaseError) {
-        if (err.code === "auth/email-already-in-use") {
-          setError("このメールアドレスはすでに使用されています。");
-        } else if (err.code === "auth/invalid-email") {
-          setError("無効なメールアドレスです。");
-        } else if (err.code === "auth/weak-password") {
-          setError("パスワードは6文字以上である必要があります。");
-        } else {
-          setError(
-            "新規登録中に予期せぬエラーが発生しました。もう一度お試しください。"
-          );
-        }
+      if (err.message.includes("already registared")) {
+        setError("このメールアドレスは既に登録されています。");
+      } else if (err.message.includes("invalid email")) {
+        setError("無効なメールアドレスです。");
+      } else if (err.message.includes("Password should be at least 6 characters")) {
+        setError("パスワードは6文字以上である必要があります。");
+      } else {
+        setError("登録中に予期せぬエラーが発生しました。もう一度お試しください。");
       }
     }
   };
