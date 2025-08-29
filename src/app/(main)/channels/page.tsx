@@ -1,15 +1,13 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { doc, setDoc, deleteDoc, collection, query, getDocs } from "firebase/firestore";
-import { onAuthStateChanged, User } from "firebase/auth";
-import { db, auth } from "@/lib/firebase";
 import { fetchChannelDetails as fetchYoutubeChannelDetails, YoutubeChannelData } from "@/lib/api/youtube";
 import { fetchUserByLogin, getAppAccessToken } from "@/lib/api/twitch";
 import AddChannelForm from "@/components/channels/AddChannelForm";
 import ChannelList from "@/components/channels/ChannelList";
 import AlertMessage from "@/components/ui/AlertMessage";
 import LoadingIndicator from "@/components/ui/LoadingIndicator";
+import { supabase } from "@/lib/supabase";
 
 // 統一されたチャンネルデータ型を定義
 interface UnifiedChannelData {
@@ -24,60 +22,74 @@ export default function ChannelsPage() {
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
     const [successMessage, setSuccessMessage] = useState<string | null>(null);
     const [addingChannel, setAddingChannel] = useState(false);
-    const [user, setUser] = useState<User | null>(null);
+    const [user, setUser] = useState<any | null>(null);
     const [loading, setLoading] = useState(true);
 
-    const fetchAndLoadChannels = useCallback(async (uid: string) => {
+    const fetchAndLoadChannels = useCallback(async () => {
         setLoading(true);
         setErrorMessage(null);
         setSuccessMessage(null);
 
-        const YOUTUBE_API_KEY = process.env.NEXT_PUBLIC_YOUTUBE_API_KEY;
-        const TWITCH_CLIENT_ID = process.env.NEXT_PUBLIC_TWITCH_CLIENT_ID;
-        const TWITCH_CLIENT_SECRET = process.env.NEXT_PUBLIC_TWITCH_CLIENT_SECRET;
-
-        if (!YOUTUBE_API_KEY || !TWITCH_CLIENT_ID || !TWITCH_CLIENT_SECRET || !db) {
-            setErrorMessage("APIキーまたはデータベースが利用できません");
+        const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+        if (sessionError || !sessionData.session) {
+            setUser(null);
             setLoading(false);
             return;
         }
 
-        const userChannelsRef = collection(db, `users/${uid}/channels`);
-        const q = query(userChannelsRef);
-        const fetchedChannelData: UnifiedChannelData[] = [];
-        
+        setUser(sessionData.session.user);
+
         try {
-            const querySnapshot = await getDocs(q);
-            querySnapshot.forEach((doc) => {
-                const data = doc.data();
-                fetchedChannelData.push({
-                    channelId: doc.id,
-                    channelName: data.channelName || "チャンネル名不明",
-                    thumbnailUrl: data.thumbnailUrl || "",
-                    platform: data.platform || 'youtube', // Firestoreからプラットフォーム情報を取得
-                });
-            });
+            const { data, error } = await supabase.from('channels').select('*').eq('user_id',sessionData.session.user.id);
+            if (error) {
+                throw error;
+            }
+
+            const fetchedChannelData: UnifiedChannelData[] = data.map((channel: any) => ({
+                channelId: channel.id,
+                channelName: channel.channelName,
+                thumbnailUrl: channel.thumbnailUrl,
+                platform: channel.platform
+            }));
+
             setChannels(fetchedChannelData);
-        } catch (error) {
+        } catch (error: any) {
             console.error("チャンネルの取得に失敗しました", error);
-            setErrorMessage("チャンネルの取得に失敗しました");
+            setErrorMessage(error.message || "チャンネルの取得に失敗しました");
         } finally {
             setLoading(false);
         }
     }, []);
 
     useEffect(() => {
-        const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-            setUser(currentUser);
-            if (currentUser) {
-                await fetchAndLoadChannels(currentUser.uid);
+        // Supabaseの認証状態を監視し、ログイン状態に応じてチャンネルを読み込む
+        const { data: authListener } = supabase.auth.onAuthStateChange(
+            (event, session) => {
+                if (session) {
+                    fetchAndLoadChannels();
+                } else {
+                    setChannels([]);
+                    setLoading(false);
+                    setUser(null);
+                }
+            }
+        );
+
+        // 初回ロード時の認証状態を確認
+        supabase.auth.getSession().then(({ data: { session } }) => {
+            if (session) {
+                fetchAndLoadChannels();
             } else {
                 setChannels([]);
                 setLoading(false);
+                setUser(null);
             }
         });
-        return () => unsubscribe();
-    }, [fetchAndLoadChannels]);
+
+        return () => {
+            authListener.subscription.unsubscribe();
+        };
+    }, [fetchAndLoadChannels]);         
 
     const handleAddChannel = async (newChannelInput: string, resetInput: (input: string) => void) => {
         setErrorMessage(null);
@@ -129,20 +141,25 @@ export default function ChannelsPage() {
                 resetInput("");
                 return;
             }
-            if (!db) throw new Error("データベースが利用できません");
-            const channelDocRef = doc(db, `users/${user.uid}/channels`, channelId);
-            await setDoc(channelDocRef, {
+            const { error } = await supabase.from('channels').insert({
+                id: channelId,
+                user_id: user.id,
                 channelName: channelDetails.channelName,
                 thumbnailUrl: channelDetails.thumbnailUrl,
                 platform: platform,
-                addedAt: new Date(),
-            });
+                addedAt: new Date().toISOString(),
+            })
+            if (error) {
+                throw error;
+            }
+
             const newChannel: UnifiedChannelData = {
                 channelId: channelDetails.channelId,
                 channelName: channelDetails.channelName,
                 thumbnailUrl: channelDetails.thumbnailUrl,
                 platform: platform
-            };
+            }
+
             setChannels([...channels, newChannel]);
             resetInput("");
             setSuccessMessage("チャンネルが追加されました");
@@ -157,15 +174,23 @@ export default function ChannelsPage() {
     const handleDeleteChannel = async (channelIdToDelete: string) => {
         setErrorMessage(null);
         setSuccessMessage(null);
-        if (!user || !db) {
+        if (!user   ) {
             setErrorMessage("チャンネルを削除するにはログインが必要です。");
             return;
         }
         if (confirm(`チャンネルID "${channelIdToDelete}" を削除しますか？`)) {
             setLoading(true);
             try {
-                const channelDocRef = doc(db, `users/${user.uid}/channels`, channelIdToDelete);
-                await deleteDoc(channelDocRef);
+                const { error } = await supabase
+                    .from('channels')
+                    .delete()
+                    .eq('id', channelIdToDelete)
+                    .eq('user_id', user.id);
+
+                if (error) {
+                    throw error;
+                }
+                
                 setChannels(channels.filter((channel) => channel.channelId !== channelIdToDelete));
                 setSuccessMessage("チャンネルが削除されました!");
             } catch (error) {
