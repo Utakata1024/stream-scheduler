@@ -1,9 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { signInWithEmailAndPassword } from "firebase/auth";
-import { auth } from "@/lib/firebase";
 import { useRouter } from "next/navigation";
+import { supabase } from "@/lib/supabase";
 
 export default function LoginForm() {
   const [email, setEmail] = useState("");
@@ -19,19 +18,23 @@ export default function LoginForm() {
 
     // ログイン処理の実行
     try {
-      await signInWithEmailAndPassword(auth, email, password);
+      const { data, error: authError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+      if (authError) {
+        throw authError;
+      }
       router.push("/schedule"); // 成功→スケジュールページへ
     } catch (err: any) {
       // エラー処理
       console.log("ログインエラー:", err);
-      if (err.code === 'auth/wrong-password') {
-        setError('パスワードが間違っています。')
-      } else if (err.code === 'auth/user-not-found') {
-        setError('ユーザーが見つかりません。');
-      } else if (err.code === 'auth/user-disabled') {
-        setError('このアカウントは無効化されています。')
+      if (err.message.includes('invalid login credentials')) {
+        setError("メールアドレスまたはパスワードが正しくありません。");
+      } else if (err.message.includes('User is disabled')) {
+        setError("このアカウントは無効化されています。");
       } else {
-        setError('ログイン中に予期せぬエラーが発生しました。もう一度お試しください。');
+        setError("ログイン中に予期せぬエラーが発生しました。もう一度お試しください。");
       }
     }
   }
