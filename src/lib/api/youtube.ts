@@ -1,3 +1,6 @@
+import { timeStamp } from "console";
+import { cache } from "react";
+
 // 修正後のコード (src/lib/api/youtube.ts)
 const YOUTUBE_API_BASE_URL = "https://www.googleapis.com/youtube/v3";
 
@@ -17,12 +20,23 @@ export interface YoutubeChannelData {
   thumbnailUrl: string;
 }
 
+// キャッシュ(有効期限:5分)
+const youtubeCache = new Map();
+const CACHE_TTL_MS = 5 * 60 * 1000;
+
 export async function fetchYoutubeStreams(
   channelId: string,
   apiKey: string
 ): Promise<YoutubeStreamData[]> {
   if (!channelId) {
     return [];
+  }
+
+  // キャッシュからデータを取得
+  const cachedData = youtubeCache.get(channelId);
+  if (cachedData && Date.now() - cachedData.timestamp < CACHE_TTL_MS) {
+    console.log(`Cache hit for YouTube channel: ${channelId}`);
+    return cachedData.data;
   }
 
   try {
@@ -89,6 +103,12 @@ export async function fetchYoutubeStreams(
     streams.sort(
       (a, b) => new Date(b.dateTime).getTime() - new Date(a.dateTime).getTime()
     );
+
+    // 取得したデータをキャッシュに保存
+    youtubeCache.set(channelId, {
+      data: streams,
+      timestamp: Date.now(),
+    });
 
     return streams;
   } catch (error) {
