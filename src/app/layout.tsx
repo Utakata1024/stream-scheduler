@@ -1,8 +1,12 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { M_PLUS_1p } from "next/font/google";
 import "./globals.css";
 
-const inter = Inter({ subsets: ["latin"] });
+const mPlus1p = M_PLUS_1p({
+  subsets: ["latin"],
+  weight: ["400", "700"],
+  variable: "--font-m-plus-1p",
+});
 
 export const metadata: Metadata = {
   title: "Stream Scheduler",
@@ -15,8 +19,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="ja">
-      <body className={inter.className}>
+    <html lang="ja" className={`${mPlus1p.className}`}>
+      <body>
         {children}
       </body>
     </html>
