@@ -59,10 +59,10 @@ export default function StreamCard({
             priority
           />
         </div>
-        <div className="relative p-4">
-          <h2 className="text-xl font-semibold mb-2 line-clamp-2">{title}</h2>
-          <p className="text-gray-600 text-sm mb-1">{channelName}</p>
-          <p className="text-gray-600 text-sm">{dateTime}</p>
+        <div className="relative p-4 md:p-6">
+          <h2 className="text-base md:text-xl font-bold mb-2 line-clamp-2">{title}</h2>
+          <p className="text-gray-600 text-xs md:text-sm mb-1">{channelName}</p>
+          <p className="text-gray-600 text-xs md:text-sm">{dateTime}</p>
           <p className={`mt-2 ${statusClass}`}>{statusText}</p>
           {/* プラットフォームロゴ */}
           <div className="absolute bottom-4 right-4">
