@@ -45,7 +45,7 @@ export default function StreamCard({
       href={streamUrl}
       target="_blank"
       rel="noopener noreferrer"
-      className="block"
+      className="block transition-transform duration-200 hover:scale-[1.02]"
     >
       <div className="bg-white rounded-lg shadow-md overflow-hidden">
         <div className="relative w-full h-48">
@@ -65,7 +65,7 @@ export default function StreamCard({
           <p className="text-gray-600 text-sm">{dateTime}</p>
           <p className={`mt-2 ${statusClass}`}>{statusText}</p>
           {/* プラットフォームロゴ */}
-          <div className="absolute bottom-2 right-2 bg-white bg-opacity-80 rounded-md p-1">
+          <div className="absolute bottom-4 right-4">
             <Image
               src={platformIcon}
               alt={platformAlt}
