@@ -14,7 +14,6 @@ export default function Header() {
   const [loadingAuth, setLoadingAuth] = useState(true);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-  // Supabaseの認証状態を監視
   useEffect(() => {
     const { data: authListener } = supabase.auth.onAuthStateChange(
       (event, session) => {
@@ -23,7 +22,6 @@ export default function Header() {
       }
     );
 
-    // 初回ロード時の認証状態を確認
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
       setLoadingAuth(false);
@@ -34,20 +32,29 @@ export default function Header() {
     };
   }, []);
 
-  // ログイン・新規登録ページはヘッダーを表示しない
-  // 認証状態がロード中の場合もヘッダーを表示しないようにする
+  useEffect(() => {
+    if (isMenuOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'auto';
+    }
+    return () => {
+      document.body.style.overflow = 'auto';
+    };
+  }, [isMenuOpen]);
+
   if (loadingAuth || isLoginPage || isSignUpPage) {
     return null;
   }
 
+  const toggleMenu = () => {
+    setIsMenuOpen(!isMenuOpen);
+  };
+
   return (
-    <header className="bg-indigo-700 text-white p-4 shadow-md">
+    <header className="bg-indigo-700 text-white p-4 shadow-md relative z-30">
       <div className="container mx-auto flex justify-between items-center">
-        {/* アプリのタイトル/ロゴ */}
-        <Link
-          href="/"
-          className="text-2xl font-bold hover:text-indigo-200 transition-colors duration-200"
-        >
+        <Link href="/" className="text-2xl font-bold hover:text-indigo-200 transition-colors duration-200">
           Stream Scheduler
         </Link>
         {user ? (
@@ -75,55 +82,39 @@ export default function Header() {
             </nav>
             {/* モバイル用ハンバーガーボタン */}
             <button
-              className="md:hidden"
-              onClick={() => setIsMenuOpen(!isMenuOpen)}
+              className="md:hidden w-6 h-6 flex flex-col justify-between z-40"
+              onClick={toggleMenu}
             >
-              <svg
-                className="w-6 h-6"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M4 6h16M4 12h16M4 18h16"
-                />
-              </svg>
+              <span className={`block w-full h-0.5 bg-white transition-transform duration-300 ease-in-out ${isMenuOpen ? 'rotate-45 translate-y-2' : ''}`}></span>
+              <span className={`block w-full h-0.5 bg-white transition-opacity duration-300 ease-in-out ${isMenuOpen ? 'opacity-0' : ''}`}></span>
+              <span className={`block w-full h-0.5 bg-white transition-transform duration-300 ease-in-out ${isMenuOpen ? '-rotate-45 -translate-y-2' : ''}`}></span>
             </button>
-            {/* モバイル用ドロップダウンメニュー */}
+            {/* メニューが開いているときに表示される透明なオーバーレイ */}
             {isMenuOpen && (
-              <div className="absolute top-16 left-0 w-full bg-indigo-700 p-4 shadow-md md:hidden">
-                <nav>
-                  <ul className="flex flex-col space-y-4">
-                    <li>
-                      <Link
-                        href="/channels"
-                        className="text-lg hover:text-indigo-200 transition-colors duration-200"
-                        onClick={() => setIsMenuOpen(false)}
-                      >
-                        チャンネル管理
-                      </Link>
-                    </li>
-                    <li>
-                      <Link
-                        href="/settings"
-                        className="text-lg hover:text-indigo-200 transition-colors duration-200"
-                        onClick={() => setIsMenuOpen(false)}
-                      >
-                        設定
-                      </Link>
-                    </li>
-                  </ul>
-                </nav>
-              </div>
+              <div className="fixed inset-0 z-10 md:hidden" onClick={toggleMenu}></div>
             )}
+            {/* モバイル用ドロワーメニュー */}
+            <div className={`md:hidden fixed top-0 right-0 w-1/2 h-screen bg-indigo-700 shadow-lg p-4 pt-20 transform transition-transform duration-300 ease-in-out z-20 ${isMenuOpen ? 'translate-x-0' : 'translate-x-full'}`}>
+              <nav className="flex flex-col items-center">
+                <Link
+                  href="/channels"
+                  className="w-full text-center py-4 text-lg hover:bg-indigo-600 transition-colors duration-200"
+                  onClick={toggleMenu}
+                >
+                  チャンネル管理
+                </Link>
+                <Link
+                  href="/settings"
+                  className="w-full text-center py-4 text-lg hover:bg-indigo-600 transition-colors duration-200"
+                  onClick={toggleMenu}
+                >
+                  設定
+                </Link>
+              </nav>
+            </div>
           </>
         ) : (
-          !isLoginPage &&
-          !user && ( // 非ログイン状態で、かつログインページ以外の場合にログインボタンを表示
+          !isLoginPage && !user && (
             <Link
               href="/login"
               className="text-lg hover:text-indigo-200 transition-colors duration-200"
