@@ -35,7 +35,7 @@ export default function ChannelList({
           {channels.map((channel) => (
             <li
               key={channel.channelId}
-              className="flex justify-between items-center bg-gray-50 p-3 rounded-md border border-gray-200"
+              className="flex justify-between items-center bg-gray-50 p-3 rounded-md border border-gray-200 transition-colors duration-200 hover:bg-gray-100"
             >
               <div className="flex items-center gap-3">
                 {channel.thumbnailUrl && (
