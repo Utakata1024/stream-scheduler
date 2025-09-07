@@ -22,8 +22,8 @@ export default function AddChannelForm({
   };
 
   return (
-    <div className="bg-white p-6 rounded-lg shadow-md max-w-xl mx-auto mb-8">
-      <h2 className="text-2xl font-semibold mb-4 text-center">
+    <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md max-w-xl mx-auto mb-8">
+      <h2 className="text-2xl font-semibold mb-4 text-center text-gray-800 dark:text-gray-100">
         チャンネルを追加
       </h2>
       <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-4">
@@ -33,27 +33,27 @@ export default function AddChannelForm({
           value={newChannelInput}
           onChange={(e) => setNewChannelInput(e.target.value)}
           placeholder="YouTubeチャンネルIDまたはTwitchユーザー名を入力"
-          className="flex-grow px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+          className="flex-grow px-4 py-2 border border-gray-300 dark:border-gray-600 dark:rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-base dark:bg-gray-700 dark:text-gray-100"
           disabled={addingChannel}
           required
         />
         <button
           type="submit"
           disabled={addingChannel}
-          className="px-6 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors duration-200"
+          className="px-6 py-2 bg-indigo-600 dark:bg-indigo-700 text-white dark:text-gray-100 rounded-md hover:bg-indigo-700 dark:hover:bg-indigo-600 transition-colors duration-200"
         >
           {addingChannel ? "追加中..." : "追加"}
         </button>
       </form>
-      <p className="text-sm text-gray-500 mt-3 text-center">
+      <p className="text-sm text-gray-500 dark:text-gray-400 mt-3 text-center">
         ※YouTubeチャンネルIDはチャンネルのURLから取得できます。
         (例:youtube.com/channel/
-        <span className="underline decoration-red-500">UC...</span>)
+        <span className="underline decoration-red-500 dark:decoration-red-400">UC...</span>)
       </p>
-      <p className="text-sm text-gray-500 mt-3 text-center">
+      <p className="text-sm text-gray-500 dark:text-gray-400 mt-3 text-center">
         ※Twitchユーザー名はチャンネルのURLから取得できます。
         (例:twitch.tv/
-        <span className="underline decoration-red-500">...</span>)
+        <span className="underline decoration-red-500 dark:decoration-red-400">...</span>)
       </p>
     </div>
   );
