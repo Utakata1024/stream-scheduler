@@ -8,6 +8,7 @@ interface StreamCardProps {
   status: "live" | "upcoming" | "ended";
   streamUrl: string;
   platform: "youtube" | "twitch";
+  channelIconUrl: string;
 }
 
 export default function StreamCard({
@@ -18,6 +19,7 @@ export default function StreamCard({
   status,
   streamUrl,
   platform,
+  channelIconUrl,
 }: StreamCardProps) {
   // 配信状態に応じたテキスト・スタイル
   const statusText =
@@ -29,10 +31,17 @@ export default function StreamCard({
 
   const statusClass =
     status === "live"
-      ? "text-green-600 font-bold"
+      ? "bg-red-500 text-white"
       : status === "upcoming"
-      ? "text-blue-600 font-bold"
-      : "text-gray-500";
+      ? "bg-blue-500 text-white"
+      : "bg-gray-400 text-white";
+
+  const statusIcon =
+    status === "live"
+      ? "/live-icon.png"
+      : status === "upcoming"
+      ? "/upcoming-icon.png"
+      : "/ended-icon.png";
 
   const platformIcon =
     platform === "youtube" ? "/youtube-logo.svg" : "/twitch-logo.png";
@@ -45,9 +54,9 @@ export default function StreamCard({
       href={streamUrl}
       target="_blank"
       rel="noopener noreferrer"
-      className="block"
+      className="block transition-transform duration-200 hover:scale-[1.02]"
     >
-      <div className="bg-white rounded-lg shadow-md overflow-hidden">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden">
         <div className="relative w-full h-48">
           {/* 配信サムネイル */}
           <Image
@@ -59,13 +68,40 @@ export default function StreamCard({
             priority
           />
         </div>
-        <div className="relative p-4">
-          <h2 className="text-xl font-semibold mb-2 line-clamp-2">{title}</h2>
-          <p className="text-gray-600 text-sm mb-1">{channelName}</p>
-          <p className="text-gray-600 text-sm">{dateTime}</p>
-          <p className={`mt-2 ${statusClass}`}>{statusText}</p>
+        <div className="relative p-4 md:p-6">
+          <h2 className="text-base md:text-xl font-bold mb-2 line-clamp-2 text-gray-900 dark:text-gray-100">
+            {title}
+          </h2>
+          <div className="flex items-center gap-2 mb-1">
+            {channelIconUrl && (
+              <Image
+                src={channelIconUrl}
+                alt={channelName}
+                width={40}
+                height={40}
+                className="rounded-full"
+              />
+            )}
+            <div className="flex flex-col">
+              <p className="text-gray-600 dark:text-gray-300 text-xs md:text-sm mb-1">
+                {channelName}
+              </p>
+              <p className="text-gray-600 dark:text-gray-300 text-xs md:text-sm">{dateTime}</p>
+            </div>
+          </div>
+          {/* 配信状態 */}
+          <div className={`inline-flex items-center rounded px-2 py-1 mt-2 text-sm ${statusClass}`}>
+            <Image
+              src={statusIcon}
+              alt={statusText}
+              width={16}
+              height={16}
+              className="mr-2"
+            />
+            <p className="font-bold">{statusText}</p>
+          </div>
           {/* プラットフォームロゴ */}
-          <div className="absolute bottom-2 right-2 bg-white bg-opacity-80 rounded-md p-1">
+          <div className="absolute bottom-4 right-4">
             <Image
               src={platformIcon}
               alt={platformAlt}

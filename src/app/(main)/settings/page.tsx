@@ -55,16 +55,16 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 p-8">
-      <div className="max-w-xl mx-auto bg-white p-6 rounded-lg shadow-md">
-        <h1 className="text-4xl font-bold text-center mb-8">設定</h1>
+    <div className="min-h-screen bg-gray-100 dark:bg-gray-900 p-8">
+      <div className="max-w-xl mx-auto bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
+        <h1 className="text-4xl font-bold text-center mb-8 text-gray-800 dark:text-gray-100">設定</h1>
         <div className="space-y-6">
           {/* ログアウトボタン */}
           <div className="flex justify-between items-center">
-            <p className="text-lg">アカウントからログアウト</p>
+            <p className="text-lg dark:text-gray-300">アカウントからログアウト</p>
             <button
               onClick={handleLogout}
-              className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors duration-200"
+              className="px-4 py-2 bg-red-500 dark:bg-red-600 text-white dark:text-gray-100 rounded-md hover:bg-red-600 dark:hover:bg-red-500 transition-colors duration-200"
             >
               ログアウト
             </button>
@@ -72,7 +72,7 @@ export default function SettingsPage() {
 
           {/* その他の設定項目を追加するセクション */}
           <div className="border-t border-gray-200 pt-6">
-            <p className="text-lg text-gray-500">
+            <p className="text-lg text-gray-500 dark:text-gray-400">
               その他の設定項目はここに配置されます。
             </p>
           </div>

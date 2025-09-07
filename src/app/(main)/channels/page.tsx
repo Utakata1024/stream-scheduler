@@ -206,12 +206,12 @@ export default function ChannelsPage() {
     const twitchChannels = channels.filter(c => c.platform === 'twitch');
 
     return (
-        <div className="min-h-screen bg-gray-100 p-8">
-            <h1 className="text-4xl font-bold text-center mb-8">チャンネル管理</h1>
+        <div className="min-h-screen bg-gray-100 dark:bg-gray-900 p-8">
+            <h1 className="text-4xl font-bold text-center mb-8 text-gray-800 dark:text-gray-100">チャンネル管理</h1>
             <LoadingIndicator loading={loading} user={user} />
             <AlertMessage message={errorMessage} type="error" />
             <AlertMessage message={successMessage} type="success" />
-            {!user && !loading && <p className="text-center text-xl text-red-600">チャンネル管理機能を利用するにはログインが必要です。<p className="mt-2"><a href="/login" className="text-indigo-600 hover:underline">ログインページへ</a></p></p>}
+            {!user && !loading && <p className="text-center text-xl text-red-600 dark:text-red-400">チャンネル管理機能を利用するにはログインが必要です。<p className="mt-2"><a href="/login" className="text-indigo-600 hover:underline">ログインページへ</a></p></p>}
             {user && !loading && (
                 <>
                     <AddChannelForm onAddChannel={handleAddChannel} addingChannel={addingChannel} />
