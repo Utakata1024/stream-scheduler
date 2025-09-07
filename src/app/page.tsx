@@ -44,7 +44,7 @@ export default function RootPage() {
   // 認証状態のロード中は何もしない（またはローディング表示）
   // ユーザー情報が取得されるまで、一時的なメッセージを表示
   if (loading) {
-    return <div className="flex min-h-screen items-center justify-center text-xl">認証状態を確認中...</div>;
+    return <div className="flex bg-white dark:bg-gray-800 min-h-screen items-center justify-center text-xl text-gray-800 dark:text-gray-100">認証状態を確認中...</div>;
   }
 
   return null;
