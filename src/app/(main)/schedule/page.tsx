@@ -7,6 +7,7 @@ import StreamCard from "@/components/schedule/StreamCard";
 import { fetchYoutubeStreams, YoutubeStreamData } from "@/lib/api/youtube";
 import { fetchTwitchStreams, getAppAccessToken } from "@/lib/api/twitch";
 import { supabase } from "@/lib/supabase";
+import { channel } from "diagnostics_channel";
 
 // 統一されたストリームデータの型定義
 interface StreamData {
@@ -18,6 +19,7 @@ interface StreamData {
   streamUrl: string;
   videoId: string;
   platform: "youtube" | "twitch";
+  channelIconUrl: string;
 }
 
 export default function SchedulePage() {
@@ -60,7 +62,7 @@ export default function SchedulePage() {
       try {
         const { data: channels, error: dbError } = await supabase
           .from("channels")
-          .select("id, platform");
+          .select("id, platform, thumbnailUrl, channelName");
 
         if (dbError) {
           throw dbError;
@@ -68,7 +70,13 @@ export default function SchedulePage() {
 
         const youtubeChannelIds: string[] = [];
         const twitchChannelIds: string[] = [];
+        const channelDataMap = new Map();
+
         channels.forEach((channel: any) => {
+          channelDataMap.set(channel.id, {
+            thumbnailUrl: channel.thumbnailUrl,
+            channelName: channel.channelName,
+          });
           if (channel.platform === "youtube") {
             youtubeChannelIds.push(channel.id);
           } else {
@@ -125,6 +133,7 @@ export default function SchedulePage() {
                   streamUrl: `https://www.twitch.tv/${s.user_name}`,
                   videoId: s.id,
                   platform: "twitch",
+                  channelIconUrl: channelDataMap.get(s.user_id)?.thumbnailUrl || ""
                 }))
               )
             );
@@ -148,6 +157,7 @@ export default function SchedulePage() {
                     streamUrl: s.streamUrl,
                     videoId: s.videoId,
                     platform: "youtube",
+                    channelIconUrl: channelDataMap.get(channelId)?.thumbnailUrl || ""
                   }))
               )
             );
@@ -242,10 +252,17 @@ export default function SchedulePage() {
               thumbnailUrl={stream.thumbnailUrl}
               title={stream.title}
               channelName={stream.channelName}
-              dateTime={new Date(stream.dateTime).toLocaleString("ja-JP")}
+              dateTime={new Date(stream.dateTime).toLocaleString("ja-JP", {
+                year: "numeric",
+                month: "numeric",
+                day: "numeric",
+                hour: "2-digit",
+                minute: "2-digit",
+              })}
               status={stream.status}
               streamUrl={stream.streamUrl}
               platform={stream.platform}
+              channelIconUrl={stream.channelIconUrl}
             />
           ))}
         </div>
