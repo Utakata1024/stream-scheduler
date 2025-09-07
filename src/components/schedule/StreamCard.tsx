@@ -56,7 +56,7 @@ export default function StreamCard({
       rel="noopener noreferrer"
       className="block transition-transform duration-200 hover:scale-[1.02]"
     >
-      <div className="bg-white rounded-lg shadow-md overflow-hidden">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden">
         <div className="relative w-full h-48">
           {/* 配信サムネイル */}
           <Image
@@ -69,7 +69,7 @@ export default function StreamCard({
           />
         </div>
         <div className="relative p-4 md:p-6">
-          <h2 className="text-base md:text-xl font-bold mb-2 line-clamp-2">
+          <h2 className="text-base md:text-xl font-bold mb-2 line-clamp-2 text-gray-900 dark:text-gray-100">
             {title}
           </h2>
           <div className="flex items-center gap-2 mb-1">
@@ -83,10 +83,10 @@ export default function StreamCard({
               />
             )}
             <div className="flex flex-col">
-              <p className="text-gray-600 text-xs md:text-sm mb-1">
+              <p className="text-gray-600 dark:text-gray-300 text-xs md:text-sm mb-1">
                 {channelName}
               </p>
-              <p className="text-gray-600 text-xs md:text-sm">{dateTime}</p>
+              <p className="text-gray-600 dark:text-gray-300 text-xs md:text-sm">{dateTime}</p>
             </div>
           </div>
           {/* 配信状態 */}
