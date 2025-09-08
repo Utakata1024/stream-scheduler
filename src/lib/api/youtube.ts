@@ -58,7 +58,24 @@ export async function fetchYoutubeStreams(
     const streams: YoutubeStreamData[] = [];
 
     if (videosData.items) {
-      videosData.items.forEach((item: any) => {
+      videosData.items.forEach((item: {
+        liveStreamingDetails: {
+          actualStartTime?: string;
+          actualEndTime?: string;
+          scheduledStartTime?: string;
+        },
+        snippet: {
+          publishedAt: string;
+          thumbnails: {
+            high?: { url: string };
+            medium?: { url: string };
+            default?: { url: string };
+          };
+          title: string;
+          channelTitle: string;
+        },
+        id: string
+      }) => {
         const liveDetails = item.liveStreamingDetails;
 
         // liveStreamingDetailsが存在する動画のみをフィルタリング
