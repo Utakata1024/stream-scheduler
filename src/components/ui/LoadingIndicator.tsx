@@ -1,5 +1,5 @@
 import React from "react";
-import { User } from "firebase/auth";
+import { User } from "@supabase/supabase-js";
 
 interface LoadingIndicatorProps {
   loading: boolean;
