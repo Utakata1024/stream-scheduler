@@ -4,13 +4,14 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { User } from "@supabase/supabase-js";
 
 export default function Header() {
   const pathname = usePathname();
   const isLoginPage = pathname === "/login";
   const isSignUpPage = pathname === "/signup";
 
-  const [user, setUser] = useState<any | null>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [loadingAuth, setLoadingAuth] = useState(true);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 

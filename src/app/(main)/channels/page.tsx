@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { fetchChannelDetails as fetchYoutubeChannelDetails, YoutubeChannelData } from "@/lib/api/youtube";
+import { fetchChannelDetails as fetchYoutubeChannelDetails } from "@/lib/api/youtube";
 import { fetchUserByLogin, getAppAccessToken } from "@/lib/api/twitch";
 import AddChannelForm from "@/components/channels/AddChannelForm";
 import ChannelList from "@/components/channels/ChannelList";

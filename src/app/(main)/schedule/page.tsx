@@ -1,13 +1,12 @@
 // スケジュールページ
 "use client";
 
-import { useEffect, useState, useCallback, use } from "react";
+import { useEffect, useState, useCallback } from "react";
 import ToggleButton from "@/components/ui/ToggleButton";
 import StreamCard from "@/components/schedule/StreamCard";
-import { fetchYoutubeStreams, YoutubeStreamData } from "@/lib/api/youtube";
+import { fetchYoutubeStreams } from "@/lib/api/youtube";
 import { fetchTwitchStreams, getAppAccessToken } from "@/lib/api/twitch";
 import { supabase } from "@/lib/supabase";
-import { channel } from "diagnostics_channel";
 
 // 統一されたストリームデータの型定義
 interface StreamData {
@@ -22,13 +21,21 @@ interface StreamData {
   channelIconUrl: string;
 }
 
+// Supabaseから取得するチャンネルデータの型定義
+interface SupabaseChannel {
+  id: string;
+  platform: 'youtube' | 'twitch';
+  thumbnailUrl: string;
+  channelName: string;
+}
+
 export default function SchedulePage() {
   const [activeTab, setActiveTab] = useState("アーカイブ");
   const [streams, setStreams] = useState<StreamData[]>([]);
   const [loadingStreams, setLoadingStreams] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [loadingUser, setLoadingUser] = useState(true);
-  const [user, setUser] = useState<any | null>(null);
+  const [user, setUser] = useState<any | null>(null); // SupabaseのUser型に変更を検討
 
   const handleTabClick = (label: string) => {
     setActiveTab(label);
@@ -42,7 +49,6 @@ export default function SchedulePage() {
       }
     );
 
-    // 初回ロード時の認証状態を確認
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
       setLoadingUser(false);
@@ -54,7 +60,7 @@ export default function SchedulePage() {
   }, []);
 
   const getStreamsFromRegisteredChannels = useCallback(
-    async (currentUserId: string) => {
+    async () => {
       setLoadingStreams(true);
       setError(null);
       let allFetchedStreams: StreamData[] = [];
@@ -70,12 +76,12 @@ export default function SchedulePage() {
 
         const youtubeChannelIds: string[] = [];
         const twitchChannelIds: string[] = [];
-        const channelDataMap = new Map();
+        const channelDataMap = new Map<string, { channelName: string; thumbnailUrl: string }>();
 
-        channels.forEach((channel: any) => {
+        channels.forEach((channel: SupabaseChannel) => {
           channelDataMap.set(channel.id, {
-            thumbnailUrl: channel.thumbnailUrl,
             channelName: channel.channelName,
+            thumbnailUrl: channel.thumbnailUrl,
           });
           if (channel.platform === "youtube") {
             youtubeChannelIds.push(channel.id);
@@ -92,7 +98,6 @@ export default function SchedulePage() {
 
         const fetchPromises: Promise<any>[] = [];
 
-        // APIキー
         const YOUTUBE_API_KEY = process.env.NEXT_PUBLIC_YOUTUBE_API_KEY;
         const TWITCH_CLIENT_ID = process.env.NEXT_PUBLIC_TWITCH_CLIENT_ID;
         const TWITCH_CLIENT_SECRET =
@@ -109,7 +114,6 @@ export default function SchedulePage() {
           return;
         }
 
-        // Twitch App Access Tokenを取得し、Twitch APIを呼び出し
         if (twitchChannelIds.length > 0) {
           const twitchAccessToken = await getAppAccessToken(
             TWITCH_CLIENT_ID,
@@ -122,7 +126,7 @@ export default function SchedulePage() {
                 twitchAccessToken,
                 TWITCH_CLIENT_ID
               ).then((twitchStreams) =>
-                twitchStreams.map((s) => ({
+                twitchStreams.map((s: any) => ({
                   thumbnailUrl: s.thumbnail_url
                     .replace("{width}", "480")
                     .replace("{height}", "270"),
@@ -133,7 +137,7 @@ export default function SchedulePage() {
                   streamUrl: `https://www.twitch.tv/${s.user_name}`,
                   videoId: s.id,
                   platform: "twitch",
-                  channelIconUrl: channelDataMap.get(s.user_id)?.thumbnailUrl || ""
+                  channelIconUrl: channelDataMap.get(s.user_id)?.thumbnailUrl || "",
                 }))
               )
             );
@@ -142,7 +146,6 @@ export default function SchedulePage() {
           }
         }
 
-        // YouTube API呼び出し
         if (youtubeChannelIds.length > 0) {
           youtubeChannelIds.forEach((channelId) => {
             fetchPromises.push(
@@ -157,7 +160,7 @@ export default function SchedulePage() {
                     streamUrl: s.streamUrl,
                     videoId: s.videoId,
                     platform: "youtube",
-                    channelIconUrl: channelDataMap.get(channelId)?.thumbnailUrl || ""
+                    channelIconUrl: channelDataMap.get(channelId)?.thumbnailUrl || "",
                   }))
               )
             );
@@ -165,16 +168,15 @@ export default function SchedulePage() {
         }
 
         const results = await Promise.allSettled(fetchPromises);
-
         results.forEach((result) => {
           if (result.status === "fulfilled") {
             allFetchedStreams = allFetchedStreams.concat(result.value);
           }
         });
         setStreams(allFetchedStreams);
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error("配信取得に失敗しました", err);
-        setError(err.message || "配信取得に失敗しました");
+        setError(err instanceof Error ? err.message : "配信取得に失敗しました");
       } finally {
         setLoadingStreams(false);
       }
@@ -189,7 +191,7 @@ export default function SchedulePage() {
       return;
     }
 
-    getStreamsFromRegisteredChannels(user.id);
+    getStreamsFromRegisteredChannels();
   }, [loadingUser, user, getStreamsFromRegisteredChannels]);
 
   const filteredStreams = streams.filter((stream) => {
