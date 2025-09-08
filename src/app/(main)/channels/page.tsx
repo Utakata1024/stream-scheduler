@@ -8,6 +8,7 @@ import ChannelList from "@/components/channels/ChannelList";
 import AlertMessage from "@/components/ui/AlertMessage";
 import LoadingIndicator from "@/components/ui/LoadingIndicator";
 import { supabase } from "@/lib/supabase";
+import { User } from "@supabase/supabase-js";
 
 // 統一されたチャンネルデータ型を定義
 interface UnifiedChannelData {
@@ -22,7 +23,7 @@ export default function ChannelsPage() {
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
     const [successMessage, setSuccessMessage] = useState<string | null>(null);
     const [addingChannel, setAddingChannel] = useState(false);
-    const [user, setUser] = useState<any | null>(null);
+    const [user, setUser] = useState<User | null>(null);
     const [loading, setLoading] = useState(true);
 
     const fetchAndLoadChannels = useCallback(async () => {
@@ -45,7 +46,7 @@ export default function ChannelsPage() {
                 throw error;
             }
 
-            const fetchedChannelData: UnifiedChannelData[] = data.map((channel: any) => ({
+            const fetchedChannelData: UnifiedChannelData[] = data.map((channel) => ({
                 channelId: channel.id,
                 channelName: channel.channelName,
                 thumbnailUrl: channel.thumbnailUrl,
@@ -53,9 +54,13 @@ export default function ChannelsPage() {
             }));
 
             setChannels(fetchedChannelData);
-        } catch (error: any) {
+        } catch (error) {
             console.error("チャンネルの取得に失敗しました", error);
-            setErrorMessage(error.message || "チャンネルの取得に失敗しました");
+            if (error instanceof Error) {
+                setErrorMessage(error.message || "チャンネルの取得に失敗しました");
+            } else {
+                setErrorMessage("チャンネルの取得に失敗しました");
+            }
         } finally {
             setLoading(false);
         }
@@ -163,9 +168,13 @@ export default function ChannelsPage() {
             setChannels([...channels, newChannel]);
             resetInput("");
             setSuccessMessage("チャンネルが追加されました");
-        } catch (error: any) {
+        } catch (error) {
             console.error("チャンネルの追加に失敗しました", error);
-            setErrorMessage(error.message || "チャンネルの追加に失敗しました");
+            if (error instanceof Error) {
+                setErrorMessage(error.message || "チャンネルの追加に失敗しました");
+            } else {
+                setErrorMessage("チャンネルの追加に失敗しました");
+            }
         } finally {
             setAddingChannel(false);
         }
@@ -195,7 +204,11 @@ export default function ChannelsPage() {
                 setSuccessMessage("チャンネルが削除されました!");
             } catch (error) {
                 console.error("チャンネルの削除に失敗しました", error);
-                setErrorMessage("チャンネルの削除に失敗しました");
+                if (error instanceof Error) {
+                    setErrorMessage(error.message || "チャンネルの削除に失敗しました");
+                } else {
+                    setErrorMessage("チャンネルの削除に失敗しました");
+                }
             } finally {
                 setLoading(false);
             }

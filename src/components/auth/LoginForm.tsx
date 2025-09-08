@@ -18,7 +18,7 @@ export default function LoginForm() {
 
     // ログイン処理の実行
     try {
-      const { data, error: authError } = await supabase.auth.signInWithPassword({
+      const { error: authError } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
@@ -26,13 +26,17 @@ export default function LoginForm() {
         throw authError;
       }
       router.push("/schedule"); // 成功→スケジュールページへ
-    } catch (err: any) {
+    } catch (err) {
       // エラー処理
       console.log("ログインエラー:", err);
-      if (err.message.includes('invalid login credentials')) {
-        setError("メールアドレスまたはパスワードが正しくありません。");
-      } else if (err.message.includes('User is disabled')) {
-        setError("このアカウントは無効化されています。");
+      if (err instanceof Error) {
+        if (err.message.includes('invalid login credentials')) {
+          setError("メールアドレスまたはパスワードが正しくありません。");
+        } else if (err.message.includes('User is disabled')) {
+          setError("このアカウントは無効化されています。");
+        } else {
+          setError("ログイン中に予期せぬエラーが発生しました。もう一度お試しください。");
+        }
       } else {
         setError("ログイン中に予期せぬエラーが発生しました。もう一度お試しください。");
       }

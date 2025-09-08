@@ -8,6 +8,7 @@ import { fetchYoutubeStreams } from "@/lib/api/youtube";
 import { fetchTwitchStreams, getAppAccessToken } from "@/lib/api/twitch";
 import type { TwitchStream } from "@/lib/api/twitch";
 import { supabase } from "@/lib/supabase";
+import { User } from "@supabase/supabase-js"; 
 
 // 統一されたストリームデータの型定義
 interface StreamData {
@@ -36,7 +37,7 @@ export default function SchedulePage() {
   const [loadingStreams, setLoadingStreams] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [loadingUser, setLoadingUser] = useState(true);
-  const [user, setUser] = useState<any | null>(null); // SupabaseのUser型に変更を検討
+  const [user, setUser] = useState<User | null>(null); // SupabaseのUser型に変更を検討
 
   const handleTabClick = (label: string) => {
     setActiveTab(label);
@@ -101,8 +102,7 @@ export default function SchedulePage() {
 
         const YOUTUBE_API_KEY = process.env.NEXT_PUBLIC_YOUTUBE_API_KEY;
         const TWITCH_CLIENT_ID = process.env.NEXT_PUBLIC_TWITCH_CLIENT_ID;
-        const TWITCH_CLIENT_SECRET =
-          process.env.NEXT_PUBLIC_TWITCH_CLIENT_SECRET;
+        const TWITCH_CLIENT_SECRET = process.env.NEXT_PUBLIC_TWITCH_CLIENT_SECRET;
 
         if (!YOUTUBE_API_KEY) {
           setError("YouTube APIキーが設定されていません");
@@ -175,9 +175,13 @@ export default function SchedulePage() {
           }
         });
         setStreams(allFetchedStreams);
-      } catch (err: unknown) {
+      } catch (err) {
         console.error("配信取得に失敗しました", err);
-        setError(err instanceof Error ? err.message : "配信取得に失敗しました");
+        if (err instanceof Error) {
+          setError(err.message || "配信取得に失敗しました");
+        } else {
+          setError("配信取得に失敗しました");
+        }
       } finally {
         setLoadingStreams(false);
       }

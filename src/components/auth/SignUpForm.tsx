@@ -36,7 +36,7 @@ export default function SignUpForm() {
 
     // 新規登録機能の実行
     try {
-      const { data, error: authError } = await supabase.auth.signUp({
+      const { error: authError } = await supabase.auth.signUp({
         email,
         password,
       });
@@ -45,14 +45,18 @@ export default function SignUpForm() {
       }
       setSuccess("登録が完了しました。確認メールを送信しました。");
       router.push("/login"); // 成功→ログインページへ
-    } catch (err: any) {
+    } catch (err) {
       console.log("新規登録エラー:", err);
-      if (err.message.includes("already registared")) {
-        setError("このメールアドレスは既に登録されています。");
-      } else if (err.message.includes("invalid email")) {
-        setError("無効なメールアドレスです。");
-      } else if (err.message.includes("Password should be at least 6 characters")) {
+      if (err instanceof Error) {
+        if (err.message.includes("already registered")) {
+          setError("このメールアドレスは既に登録されています。");
+        } else if (err.message.includes("invalid email")) {
+          setError("無効なメールアドレスです。");
+        } else if (err.message.includes("Password should be at least 6 characters")) {
         setError("パスワードは6文字以上である必要があります。");
+        } else {
+        setError("登録中に予期せぬエラーが発生しました。もう一度お試しください。");
+        }
       } else {
         setError("登録中に予期せぬエラーが発生しました。もう一度お試しください。");
       }
