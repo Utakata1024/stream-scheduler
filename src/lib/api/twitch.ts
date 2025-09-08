@@ -2,7 +2,7 @@
 const TWITCH_API_BASE_URL = "https://api.twitch.tv/helix";
 const TWITCH_AUTH_BASE_URL = "https://id.twitch.tv/oauth2";
 
-interface TwitchStream {
+export type TwitchStream = {
   id: string;
   user_id: string;
   user_name: string;

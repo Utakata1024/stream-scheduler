@@ -14,6 +14,8 @@ export default function SignUpForm() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
+  const router = useRouter();
+
   // フォーム送信時の処理
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -42,7 +44,7 @@ export default function SignUpForm() {
         throw authError;
       }
       setSuccess("登録が完了しました。確認メールを送信しました。");
-      // router.push("/login"); // 成功→ログインページへ
+      router.push("/login"); // 成功→ログインページへ
     } catch (err: any) {
       console.log("新規登録エラー:", err);
       if (err.message.includes("already registared")) {

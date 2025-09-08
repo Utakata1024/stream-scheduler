@@ -40,7 +40,7 @@ export default function RootPage() {
         router.push('/login');
       }
     }
-  }, [loading, user]);
+  }, [loading, user, router]);
 
   // 認証状態のロード中は何もしない（またはローディング表示）
   // ユーザー情報が取得されるまで、一時的なメッセージを表示

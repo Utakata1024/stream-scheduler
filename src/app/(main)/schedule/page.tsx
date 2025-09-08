@@ -6,6 +6,7 @@ import ToggleButton from "@/components/ui/ToggleButton";
 import StreamCard from "@/components/schedule/StreamCard";
 import { fetchYoutubeStreams } from "@/lib/api/youtube";
 import { fetchTwitchStreams, getAppAccessToken } from "@/lib/api/twitch";
+import type { TwitchStream } from "@/lib/api/twitch";
 import { supabase } from "@/lib/supabase";
 
 // 統一されたストリームデータの型定義
@@ -96,7 +97,7 @@ export default function SchedulePage() {
           return;
         }
 
-        const fetchPromises: Promise<any>[] = [];
+        const fetchPromises: Promise<StreamData[]>[] = [];
 
         const YOUTUBE_API_KEY = process.env.NEXT_PUBLIC_YOUTUBE_API_KEY;
         const TWITCH_CLIENT_ID = process.env.NEXT_PUBLIC_TWITCH_CLIENT_ID;
@@ -126,7 +127,7 @@ export default function SchedulePage() {
                 twitchAccessToken,
                 TWITCH_CLIENT_ID
               ).then((twitchStreams) =>
-                twitchStreams.map((s: any) => ({
+                twitchStreams.map((s: TwitchStream) => ({
                   thumbnailUrl: s.thumbnail_url
                     .replace("{width}", "480")
                     .replace("{height}", "270"),
