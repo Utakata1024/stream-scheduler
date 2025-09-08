@@ -1,7 +1,4 @@
-import { timeStamp } from "console";
-import { cache } from "react";
-
-// 修正後のコード (src/lib/api/youtube.ts)
+// YouTube APIを使用して配信情報を取得
 const YOUTUBE_API_BASE_URL = "https://www.googleapis.com/youtube/v3";
 
 export interface YoutubeStreamData {
@@ -46,7 +43,7 @@ export async function fetchYoutubeStreams(
     const searchData = await searchResponse.json();
 
     const videoIds = (searchData && searchData.items)
-      ? searchData.items.map((item: any) => item.id.videoId).join(",")
+      ? searchData.items.map((item: { id: { videoId: string } }) => item.id.videoId).join(",")
       : "";
 
     if (!videoIds) {
