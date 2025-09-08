@@ -13,7 +13,6 @@ export default function SignUpForm() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  const router = useRouter();
 
   // フォーム送信時の処理
   const handleSubmit = async (e: React.FormEvent) => {
@@ -142,6 +141,8 @@ export default function SignUpForm() {
         </div>
         {/* エラーメッセージがあれば表示 */}
         {error && <p className="text-red-500 text-sm text-center dark:text-red-400">{error}</p>}
+        {/* 成功メッセージがあれば表示 */}
+        {success && <p className="text-green-500 text-sm text-center dark:text-green-400">{success}</p>}
         <div>
           <p className="text-center text-sm text-gray-600 mt-4 dark:text-gray-400">
             すでにアカウントをお持ちですか？

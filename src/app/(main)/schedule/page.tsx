@@ -170,7 +170,7 @@ export default function SchedulePage() {
         const results = await Promise.allSettled(fetchPromises);
         results.forEach((result) => {
           if (result.status === "fulfilled") {
-            allFetchedStreams = allFetchedStreams.concat(result.value);
+            allFetchedStreams = allFetchedStreams.concat(result.value as StreamData[]);
           }
         });
         setStreams(allFetchedStreams);
