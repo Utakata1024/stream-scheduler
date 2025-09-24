@@ -4,11 +4,8 @@
 import { useEffect, useState, useCallback } from "react";
 import ToggleButton from "@/components/ui/ToggleButton";
 import StreamCard from "@/components/schedule/StreamCard";
-import { fetchYoutubeStreams } from "@/lib/api/youtube";
-import { fetchTwitchStreams, getAppAccessToken } from "@/lib/api/twitch";
-import type { TwitchStream } from "@/lib/api/twitch";
-import { supabase } from "@/lib/supabase";
-import { User } from "@supabase/supabase-js"; 
+import { supabase } from "@/app/api/supabase";
+import { User } from "@supabase/supabase-js";
 
 // 統一されたストリームデータの型定義
 interface StreamData {
@@ -23,21 +20,13 @@ interface StreamData {
   channelIconUrl: string;
 }
 
-// Supabaseから取得するチャンネルデータの型定義
-interface SupabaseChannel {
-  id: string;
-  platform: 'youtube' | 'twitch';
-  thumbnailUrl: string;
-  channelName: string;
-}
-
 export default function SchedulePage() {
   const [activeTab, setActiveTab] = useState("アーカイブ");
   const [streams, setStreams] = useState<StreamData[]>([]);
   const [loadingStreams, setLoadingStreams] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [loadingUser, setLoadingUser] = useState(true);
-  const [user, setUser] = useState<User | null>(null); // SupabaseのUser型に変更を検討
+  const [user, setUser] = useState<User | null>(null);
 
   const handleTabClick = (label: string) => {
     setActiveTab(label);
@@ -62,29 +51,35 @@ export default function SchedulePage() {
   }, []);
 
   const getStreamsFromRegisteredChannels = useCallback(
-    async () => {
+    async (currentUser: User) => {
       setLoadingStreams(true);
       setError(null);
-      let allFetchedStreams: StreamData[] = [];
 
       try {
         const { data: channels, error: dbError } = await supabase
           .from("channels")
-          .select("id, platform, thumbnailUrl, channelName");
+          .select("id, platform, thumbnailUrl, channelName")
+          .eq("user_id", currentUser.id);
 
-        if (dbError) {
-          throw dbError;
+        if (dbError) throw dbError;
+
+        if (channels.length === 0) {
+          setStreams([]);
+          setLoadingStreams(false);
+          return;
         }
 
         const youtubeChannelIds: string[] = [];
         const twitchChannelIds: string[] = [];
-        const channelDataMap = new Map<string, { channelName: string; thumbnailUrl: string }>();
+        const channelDataMap: {
+          [key: string]: { channelName: string; thumbnailUrl: string };
+        } = {};
 
-        channels.forEach((channel: SupabaseChannel) => {
-          channelDataMap.set(channel.id, {
+        channels.forEach((channel) => {
+          channelDataMap[channel.id] = {
             channelName: channel.channelName,
             thumbnailUrl: channel.thumbnailUrl,
-          });
+          };
           if (channel.platform === "youtube") {
             youtubeChannelIds.push(channel.id);
           } else {
@@ -92,88 +87,27 @@ export default function SchedulePage() {
           }
         });
 
-        if (youtubeChannelIds.length === 0 && twitchChannelIds.length === 0) {
-          setStreams([]);
-          setLoadingStreams(false);
-          return;
-        }
-
-        const fetchPromises: Promise<StreamData[]>[] = [];
-
-        const YOUTUBE_API_KEY = process.env.NEXT_PUBLIC_YOUTUBE_API_KEY;
-        const TWITCH_CLIENT_ID = process.env.NEXT_PUBLIC_TWITCH_CLIENT_ID;
-        const TWITCH_CLIENT_SECRET = process.env.NEXT_PUBLIC_TWITCH_CLIENT_SECRET;
-
-        if (!YOUTUBE_API_KEY) {
-          setError("YouTube APIキーが設定されていません");
-          setLoadingStreams(false);
-          return;
-        }
-        if (!TWITCH_CLIENT_ID || !TWITCH_CLIENT_SECRET) {
-          setError("Twitch APIキーが設定されていません");
-          setLoadingStreams(false);
-          return;
-        }
-
-        if (twitchChannelIds.length > 0) {
-          const twitchAccessToken = await getAppAccessToken(
-            TWITCH_CLIENT_ID,
-            TWITCH_CLIENT_SECRET
-          );
-          if (twitchAccessToken) {
-            fetchPromises.push(
-              fetchTwitchStreams(
-                twitchChannelIds,
-                twitchAccessToken,
-                TWITCH_CLIENT_ID
-              ).then((twitchStreams) =>
-                twitchStreams.map((s: TwitchStream) => ({
-                  thumbnailUrl: s.thumbnail_url
-                    .replace("{width}", "480")
-                    .replace("{height}", "270"),
-                  title: s.title,
-                  channelName: s.user_name,
-                  dateTime: s.started_at,
-                  status: "live",
-                  streamUrl: `https://www.twitch.tv/${s.user_name}`,
-                  videoId: s.id,
-                  platform: "twitch",
-                  channelIconUrl: channelDataMap.get(s.user_id)?.thumbnailUrl || "",
-                }))
-              )
-            );
-          } else {
-            setError("Twitch認証トークンの取得に失敗しました。");
-          }
-        }
-
-        if (youtubeChannelIds.length > 0) {
-          youtubeChannelIds.forEach((channelId) => {
-            fetchPromises.push(
-              fetchYoutubeStreams(channelId, YOUTUBE_API_KEY).then(
-                (youtubeStreams) =>
-                  youtubeStreams.map((s) => ({
-                    thumbnailUrl: s.thumbnailUrl,
-                    title: s.title,
-                    channelName: s.channelName,
-                    dateTime: s.dateTime,
-                    status: s.status,
-                    streamUrl: s.streamUrl,
-                    videoId: s.videoId,
-                    platform: "youtube",
-                    channelIconUrl: channelDataMap.get(channelId)?.thumbnailUrl || "",
-                  }))
-              )
-            );
-          });
-        }
-
-        const results = await Promise.allSettled(fetchPromises);
-        results.forEach((result) => {
-          if (result.status === "fulfilled") {
-            allFetchedStreams = allFetchedStreams.concat(result.value as StreamData[]);
-          }
+        // 新しく作成した内部APIにリクエストを送信
+        const response = await fetch("/api/get-streams", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            youtubeChannelIds,
+            twitchChannelIds,
+            channelDataMap,
+          }),
         });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(
+            errorData.error || "配信データの取得に失敗しました。"
+          );
+        }
+
+        const allFetchedStreams = await response.json();
         setStreams(allFetchedStreams);
       } catch (err) {
         console.error("配信取得に失敗しました", err);
@@ -190,42 +124,35 @@ export default function SchedulePage() {
   );
 
   useEffect(() => {
-    if (loadingUser || !user) {
+    if (loadingUser) return;
+    if (user) {
+      getStreamsFromRegisteredChannels(user);
+    } else {
       setLoadingStreams(false);
       setStreams([]);
-      return;
     }
-
-    getStreamsFromRegisteredChannels();
   }, [loadingUser, user, getStreamsFromRegisteredChannels]);
 
   const filteredStreams = streams.filter((stream) => {
-    if (activeTab === "アーカイブ") {
-      return stream.status === "ended";
-    } else if (activeTab === "配信中") {
-      return stream.status === "live";
-    } else if (activeTab === "配信予定") {
-      return stream.status === "upcoming";
-    }
+    if (activeTab === "アーカイブ") return stream.status === "ended";
+    if (activeTab === "配信中") return stream.status === "live";
+    if (activeTab === "配信予定") return stream.status === "upcoming";
     return false;
   });
 
   const isLoading = loadingUser || loadingStreams;
 
-  const sortedStreams = [...filteredStreams];
-  if (activeTab === "アーカイブ") {
-    sortedStreams.sort(
-      (a, b) => new Date(b.dateTime).getTime() - new Date(a.dateTime).getTime()
-    );
-  } else {
-    sortedStreams.sort(
-      (a, b) => new Date(a.dateTime).getTime() - new Date(b.dateTime).getTime()
-    );
-  }
+  const sortedStreams = [...filteredStreams].sort((a, b) => {
+    const dateA = new Date(a.dateTime).getTime();
+    const dateB = new Date(b.dateTime).getTime();
+    return activeTab === "アーカイブ" ? dateB - dateA : dateA - dateB;
+  });
 
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900 p-8">
-      <h1 className="text-4xl font-bold text-center mb-8 text-gray-800 dark:text-gray-100">スケジュール</h1>
+      <h1 className="text-4xl font-bold text-center mb-8 text-gray-800 dark:text-gray-100">
+        スケジュール
+      </h1>
       <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md mb-6 flex justify-center gap-4">
         {["アーカイブ", "配信中", "配信予定"].map((label) => (
           <ToggleButton

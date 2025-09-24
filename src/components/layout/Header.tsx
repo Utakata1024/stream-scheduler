@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { supabase } from "@/lib/supabase";
+import { supabase } from "@/app/api/supabase";
 import { User } from "@supabase/supabase-js";
 
 export default function Header() {
@@ -35,12 +35,12 @@ export default function Header() {
 
   useEffect(() => {
     if (isMenuOpen) {
-      document.body.style.overflow = 'hidden';
+      document.body.style.overflow = "hidden";
     } else {
-      document.body.style.overflow = 'auto';
+      document.body.style.overflow = "auto";
     }
     return () => {
-      document.body.style.overflow = 'auto';
+      document.body.style.overflow = "auto";
     };
   }, [isMenuOpen]);
 
@@ -55,7 +55,10 @@ export default function Header() {
   return (
     <header className="bg-indigo-700 text-white p-4 shadow-md relative z-30">
       <div className="container mx-auto flex justify-between items-center">
-        <Link href="/" className="text-2xl font-bold hover:text-indigo-200 transition-colors duration-200">
+        <Link
+          href="/"
+          className="text-2xl font-bold hover:text-indigo-200 transition-colors duration-200"
+        >
           Stream Scheduler
         </Link>
         {user ? (
@@ -86,16 +89,35 @@ export default function Header() {
               className="md:hidden w-6 h-6 flex flex-col justify-between z-40"
               onClick={toggleMenu}
             >
-              <span className={`block w-full h-0.5 bg-white transition-transform duration-300 ease-in-out ${isMenuOpen ? 'rotate-45 translate-y-2' : ''}`}></span>
-              <span className={`block w-full h-0.5 bg-white transition-opacity duration-300 ease-in-out ${isMenuOpen ? 'opacity-0' : ''}`}></span>
-              <span className={`block w-full h-0.5 bg-white transition-transform duration-300 ease-in-out ${isMenuOpen ? '-rotate-45 -translate-y-2' : ''}`}></span>
+              <span
+                className={`block w-full h-0.5 bg-white transition-transform duration-300 ease-in-out ${
+                  isMenuOpen ? "rotate-45 translate-y-2" : ""
+                }`}
+              ></span>
+              <span
+                className={`block w-full h-0.5 bg-white transition-opacity duration-300 ease-in-out ${
+                  isMenuOpen ? "opacity-0" : ""
+                }`}
+              ></span>
+              <span
+                className={`block w-full h-0.5 bg-white transition-transform duration-300 ease-in-out ${
+                  isMenuOpen ? "-rotate-45 -translate-y-2" : ""
+                }`}
+              ></span>
             </button>
             {/* メニューが開いているときに表示される透明なオーバーレイ */}
             {isMenuOpen && (
-              <div className="fixed inset-0 z-10 md:hidden" onClick={toggleMenu}></div>
+              <div
+                className="fixed inset-0 z-10 md:hidden"
+                onClick={toggleMenu}
+              ></div>
             )}
             {/* モバイル用ドロワーメニュー */}
-            <div className={`md:hidden fixed top-0 right-0 w-1/2 h-screen bg-indigo-700 shadow-lg p-4 pt-20 transform transition-transform duration-300 ease-in-out z-20 ${isMenuOpen ? 'translate-x-0' : 'translate-x-full'}`}>
+            <div
+              className={`md:hidden fixed top-0 right-0 w-1/2 h-screen bg-indigo-700 shadow-lg p-4 pt-20 transform transition-transform duration-300 ease-in-out z-20 ${
+                isMenuOpen ? "translate-x-0" : "translate-x-full"
+              }`}
+            >
               <nav className="flex flex-col items-center">
                 <Link
                   href="/channels"
@@ -115,7 +137,8 @@ export default function Header() {
             </div>
           </>
         ) : (
-          !isLoginPage && !user && (
+          !isLoginPage &&
+          !user && (
             <Link
               href="/login"
               className="text-lg hover:text-indigo-200 transition-colors duration-200"

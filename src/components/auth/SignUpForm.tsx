@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { supabase } from "@/lib/supabase";
+import { supabase } from "@/app/api/supabase";
 
 export default function SignUpForm() {
   const [email, setEmail] = useState("");
@@ -52,13 +52,19 @@ export default function SignUpForm() {
           setError("このメールアドレスは既に登録されています。");
         } else if (err.message.includes("invalid email")) {
           setError("無効なメールアドレスです。");
-        } else if (err.message.includes("Password should be at least 6 characters")) {
-        setError("パスワードは6文字以上である必要があります。");
+        } else if (
+          err.message.includes("Password should be at least 6 characters")
+        ) {
+          setError("パスワードは6文字以上である必要があります。");
         } else {
-        setError("登録中に予期せぬエラーが発生しました。もう一度お試しください。");
+          setError(
+            "登録中に予期せぬエラーが発生しました。もう一度お試しください。"
+          );
         }
       } else {
-        setError("登録中に予期せぬエラーが発生しました。もう一度お試しください。");
+        setError(
+          "登録中に予期せぬエラーが発生しました。もう一度お試しください。"
+        );
       }
     }
   };
@@ -146,9 +152,17 @@ export default function SignUpForm() {
           </button>
         </div>
         {/* エラーメッセージがあれば表示 */}
-        {error && <p className="text-red-500 text-sm text-center dark:text-red-400">{error}</p>}
+        {error && (
+          <p className="text-red-500 text-sm text-center dark:text-red-400">
+            {error}
+          </p>
+        )}
         {/* 成功メッセージがあれば表示 */}
-        {success && <p className="text-green-500 text-sm text-center dark:text-green-400">{success}</p>}
+        {success && (
+          <p className="text-green-500 text-sm text-center dark:text-green-400">
+            {success}
+          </p>
+        )}
         <div>
           <p className="text-center text-sm text-gray-600 mt-4 dark:text-gray-400">
             すでにアカウントをお持ちですか？

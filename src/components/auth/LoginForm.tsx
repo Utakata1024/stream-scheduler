@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { supabase } from "@/lib/supabase";
+import { supabase } from "@/app/api/supabase";
 
 export default function LoginForm() {
   const [email, setEmail] = useState("");
@@ -30,18 +30,22 @@ export default function LoginForm() {
       // エラー処理
       console.log("ログインエラー:", err);
       if (err instanceof Error) {
-        if (err.message.includes('invalid login credentials')) {
+        if (err.message.includes("invalid login credentials")) {
           setError("メールアドレスまたはパスワードが正しくありません。");
-        } else if (err.message.includes('User is disabled')) {
+        } else if (err.message.includes("User is disabled")) {
           setError("このアカウントは無効化されています。");
         } else {
-          setError("ログイン中に予期せぬエラーが発生しました。もう一度お試しください。");
+          setError(
+            "ログイン中に予期せぬエラーが発生しました。もう一度お試しください。"
+          );
         }
       } else {
-        setError("ログイン中に予期せぬエラーが発生しました。もう一度お試しください。");
+        setError(
+          "ログイン中に予期せぬエラーが発生しました。もう一度お試しください。"
+        );
       }
     }
-  }
+  };
 
   return (
     <div className="flex bg-white dark:bg-gray-800 min-h-screen items-center justify-center p-4">
@@ -94,7 +98,11 @@ export default function LoginForm() {
           </button>
         </div>
         {/* エラーメッセージがあれば表示 */}
-        {error && <p className="text-red-500 dark:text-red-400 text-sm text-center">{error}</p>}
+        {error && (
+          <p className="text-red-500 dark:text-red-400 text-sm text-center">
+            {error}
+          </p>
+        )}
         <div>
           <p className="text-center text-sm text-gray-600 dark:text-gray-400 mt-4">
             アカウントをお持ちでないですか？
