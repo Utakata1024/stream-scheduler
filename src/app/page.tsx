@@ -1,18 +1,18 @@
 // トップページ
 
-'use client';
+"use client";
 
-import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
-import { supabase } from '@/lib/supabase';
-import { User } from '@supabase/supabase-js';
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { supabase } from "@/app/api/supabase";
+import { User } from "@supabase/supabase-js";
 
 export default function RootPage() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
   const router = useRouter();
-  
+
   // 認証状態の監視
   useEffect(() => {
     const { data: authListener } = supabase.auth.onAuthStateChange(
@@ -35,9 +35,9 @@ export default function RootPage() {
   useEffect(() => {
     if (!loading) {
       if (user) {
-        router.push('/schedule');
+        router.push("/schedule");
       } else {
-        router.push('/login');
+        router.push("/login");
       }
     }
   }, [loading, user, router]);
@@ -45,7 +45,11 @@ export default function RootPage() {
   // 認証状態のロード中は何もしない（またはローディング表示）
   // ユーザー情報が取得されるまで、一時的なメッセージを表示
   if (loading) {
-    return <div className="flex bg-white dark:bg-gray-800 min-h-screen items-center justify-center text-xl text-gray-800 dark:text-gray-100">認証状態を確認中...</div>;
+    return (
+      <div className="flex bg-white dark:bg-gray-800 min-h-screen items-center justify-center text-xl text-gray-800 dark:text-gray-100">
+        認証状態を確認中...
+      </div>
+    );
   }
 
   return null;
