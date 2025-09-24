@@ -1,8 +1,6 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { fetchChannelDetails as fetchYoutubeChannelDetails } from "@/lib/api/youtube";
-import { fetchUserByLogin, getAppAccessToken } from "@/lib/api/twitch";
 import AddChannelForm from "@/components/channels/AddChannelForm";
 import ChannelList from "@/components/channels/ChannelList";
 import AlertMessage from "@/components/ui/AlertMessage";
@@ -67,7 +65,6 @@ export default function ChannelsPage() {
     }, []);
 
     useEffect(() => {
-        // Supabaseの認証状態を監視し、ログイン状態に応じてチャンネルを読み込む
         const { data: authListener } = supabase.auth.onAuthStateChange(
             (event, session) => {
                 if (session) {
@@ -80,7 +77,6 @@ export default function ChannelsPage() {
             }
         );
 
-        // 初回ロード時の認証状態を確認
         supabase.auth.getSession().then(({ data: { session } }) => {
             if (session) {
                 fetchAndLoadChannels();
@@ -94,7 +90,7 @@ export default function ChannelsPage() {
         return () => {
             authListener.subscription.unsubscribe();
         };
-    }, [fetchAndLoadChannels]);         
+    }, [fetchAndLoadChannels]);
 
     const handleAddChannel = async (newChannelInput: string, resetInput: (input: string) => void) => {
         setErrorMessage(null);
@@ -108,70 +104,59 @@ export default function ChannelsPage() {
             return;
         }
         setAddingChannel(true);
-        const trimmedInput = newChannelInput.trim();
-        let channelDetails = null;
-        let channelId = '';
-        let platform: 'youtube' | 'twitch';
+
         try {
-            const YOUTUBE_API_KEY = process.env.NEXT_PUBLIC_YOUTUBE_API_KEY;
-            const TWITCH_CLIENT_ID = process.env.NEXT_PUBLIC_TWITCH_CLIENT_ID;
-            const TWITCH_CLIENT_SECRET = process.env.NEXT_PUBLIC_TWITCH_CLIENT_SECRET;
-            if (trimmedInput.startsWith('UC')) {
-                platform = 'youtube';
-                channelId = trimmedInput;
-                if (!YOUTUBE_API_KEY) throw new Error("YouTube APIキーが設定されていません");
-                channelDetails = await fetchYoutubeChannelDetails(channelId, YOUTUBE_API_KEY);
-            } else {
-                platform = 'twitch';
-                if (!TWITCH_CLIENT_ID || !TWITCH_CLIENT_SECRET) throw new Error("Twitch APIキーが設定されていません");
-                const twitchAccessToken = await getAppAccessToken(TWITCH_CLIENT_ID, TWITCH_CLIENT_SECRET);
-                if (!twitchAccessToken) throw new Error("Twitch認証トークンの取得に失敗しました。");
-                const twitchUser = await fetchUserByLogin(trimmedInput, twitchAccessToken, TWITCH_CLIENT_ID);
-                if (twitchUser) {
-                    channelId = twitchUser.id;
-                    channelDetails = {
-                        channelId: twitchUser.id,
-                        channelName: twitchUser.display_name,
-                        thumbnailUrl: twitchUser.profile_image_url
-                    };
-                }
+            const trimmedInput = newChannelInput.trim();
+            const platform = trimmedInput.startsWith('UC') ? 'youtube' : 'twitch';
+
+            // 内部APIエンドポイントを呼び出す
+            const response = await fetch('/api/add-channel', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ channelInput: trimmedInput, platform }),
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.error || 'チャンネル情報の取得に失敗しました');
             }
-            if (!channelDetails) {
-                setErrorMessage("指定されたチャンネルが見つかりません。");
-                resetInput("");
-                return;
-            }
+            const { channelId, channelName, thumbnailUrl } = data;
+
             if (channels.some((c) => c.channelId === channelId)) {
                 setErrorMessage("このチャンネルは既に登録されています。");
                 resetInput("");
                 return;
             }
-            const { error } = await supabase.from('channels').insert({
+
+            const { error: insertError } = await supabase.from('channels').insert({
                 id: channelId,
                 user_id: user.id,
-                channelName: channelDetails.channelName,
-                thumbnailUrl: channelDetails.thumbnailUrl,
+                channelName: channelName,
+                thumbnailUrl: thumbnailUrl,
                 platform: platform,
                 addedAt: new Date().toISOString(),
-            })
-            if (error) {
-                throw error;
+            });
+
+            if (insertError) {
+                throw insertError;
             }
 
             const newChannel: UnifiedChannelData = {
-                channelId: channelDetails.channelId,
-                channelName: channelDetails.channelName,
-                thumbnailUrl: channelDetails.thumbnailUrl,
-                platform: platform
-            }
+                channelId,
+                channelName,
+                thumbnailUrl,
+                platform
+            };
 
             setChannels([...channels, newChannel]);
             resetInput("");
             setSuccessMessage("チャンネルが追加されました");
+
         } catch (error) {
             console.error("チャンネルの追加に失敗しました", error);
             if (error instanceof Error) {
-                setErrorMessage(error.message || "チャンネルの追加に失敗しました");
+                setErrorMessage(error.message);
             } else {
                 setErrorMessage("チャンネルの追加に失敗しました");
             }
@@ -183,7 +168,7 @@ export default function ChannelsPage() {
     const handleDeleteChannel = async (channelIdToDelete: string) => {
         setErrorMessage(null);
         setSuccessMessage(null);
-        if (!user   ) {
+        if (!user) {
             setErrorMessage("チャンネルを削除するにはログインが必要です。");
             return;
         }
@@ -199,7 +184,6 @@ export default function ChannelsPage() {
                 if (error) {
                     throw error;
                 }
-                
                 setChannels(channels.filter((channel) => channel.channelId !== channelIdToDelete));
                 setSuccessMessage("チャンネルが削除されました!");
             } catch (error) {
