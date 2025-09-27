@@ -66,6 +66,7 @@ export default function StreamCard({
             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
             className="object-cover"
             priority
+            unoptimized={true}  // Vercelの外部画像最適化を無効化
           />
         </div>
         <div className="relative p-4 md:p-6">
