@@ -81,6 +81,7 @@ export default function StreamCard({
                 width={40}
                 height={40}
                 className="rounded-full"
+                unoptimized={true}  // Vercelの外部画像最適化を無効化
               />
             )}
             <div className="flex flex-col">
