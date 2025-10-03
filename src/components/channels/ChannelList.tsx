@@ -55,6 +55,7 @@ export default function ChannelList({
                         width={32}
                         height={32}
                         className="w-8 h-8 rounded-full"
+                        unoptimized={true}  // Vercelの外部画像最適化を無効化
                       />
                     </div>
                   </a>
